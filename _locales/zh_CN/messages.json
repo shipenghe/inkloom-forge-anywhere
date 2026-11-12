@@ -1,0 +1,1017 @@
+{
+  "text_ab974f89d848": {
+    "message": "下一步：选取视频",
+    "description": "下一步：选取视频"
+  },
+  "text_56d1af4f4047": {
+    "message": "不支持 AVIF",
+    "description": "不支持 AVIF"
+  },
+  "text_9f0597d87722": {
+    "message": "不支持 GIF",
+    "description": "不支持 GIF"
+  },
+  "text_6e574d24d6d5": {
+    "message": "不支持动态 WebP",
+    "description": "不支持动态 WebP"
+  },
+  "text_b21d7b2bc7af": {
+    "message": "不支持此图片格式",
+    "description": "不支持此图片格式"
+  },
+  "text_85dade959621": {
+    "message": "不支持的操作",
+    "description": "不支持的操作"
+  },
+  "text_81351a9e2bb1": {
+    "message": "不支持该媒体",
+    "description": "不支持该媒体"
+  },
+  "text_f9473d73795f": {
+    "message": "不支持该素材的地址类型",
+    "description": "不支持该素材的地址类型"
+  },
+  "text_0b5261229a81": {
+    "message": "不支持该视频格式",
+    "description": "不支持该视频格式"
+  },
+  "text_54b5edf8d197": {
+    "message": "仍在处理中，请稍候",
+    "description": "仍在处理中，请稍候"
+  },
+  "text_b3673af1dda6": {
+    "message": "先设置接收画布",
+    "description": "先设置接收画布"
+  },
+  "text_c78dffe1e8ab": {
+    "message": "全片",
+    "description": "全片"
+  },
+  "text_6793241958c9": {
+    "message": "关闭自动准备视频",
+    "description": "关闭自动准备视频"
+  },
+  "text_871be2654869": {
+    "message": "准备中…",
+    "description": "准备中…"
+  },
+  "text_3623003f7b25": {
+    "message": "分段采集失败",
+    "description": "分段采集失败"
+  },
+  "text_5a4315cc7ef7": {
+    "message": "分段采集已断开，请重新开启并选择视频",
+    "description": "分段采集已断开，请重新开启并选择视频"
+  },
+  "text_4bb68d686215": {
+    "message": "分段采集页面已关闭或刷新，请重新开启采集",
+    "description": "分段采集页面已关闭或刷新，请重新开启采集"
+  },
+  "text_aec4cce16b8e": {
+    "message": "分段采集页面已失效",
+    "description": "分段采集页面已失效"
+  },
+  "text_eff514b8b83f": {
+    "message": "切换",
+    "description": "切换"
+  },
+  "text_44daaea5af1c": {
+    "message": "切换到素材网页",
+    "description": "切换到素材网页"
+  },
+  "text_309c9371a28e": {
+    "message": "发送到画布",
+    "description": "发送到画布"
+  },
+  "text_fafb3b5d3a51": {
+    "message": "发送到画布（请先设置接收画布）",
+    "description": "发送到画布（请先设置接收画布）"
+  },
+  "text_46ab169e0354": {
+    "message": "发送图片到画布",
+    "description": "发送图片到画布"
+  },
+  "text_ac77953a1e06": {
+    "message": "发送失败",
+    "description": "发送失败"
+  },
+  "text_bbf944b6d1f1": {
+    "message": "发送失败，请重试",
+    "description": "发送失败，请重试"
+  },
+  "text_ff1cbb70ec00": {
+    "message": "发送媒体失败",
+    "description": "发送媒体失败"
+  },
+  "text_fcf83c89d10d": {
+    "message": "发送完成",
+    "description": "发送完成"
+  },
+  "text_61499aa32bfe": {
+    "message": "发送素材到画布",
+    "description": "发送素材到画布"
+  },
+  "text_d967596291f0": {
+    "message": "发送视频到画布",
+    "description": "发送视频到画布"
+  },
+  "text_3930ebef6a42": {
+    "message": "只能在普通网页采集视频",
+    "description": "只能在普通网页采集视频"
+  },
+  "text_d24c10d37db0": {
+    "message": "图片",
+    "description": "图片"
+  },
+  "text_75efeb9427be": {
+    "message": "媒体传输不完整，请重试",
+    "description": "媒体传输不完整，请重试"
+  },
+  "text_942de92beeb9": {
+    "message": "媒体传输已中断，请重试",
+    "description": "媒体传输已中断，请重试"
+  },
+  "text_ff4c617d8b49": {
+    "message": "媒体传输数据无效，请重试",
+    "description": "媒体传输数据无效，请重试"
+  },
+  "text_7cde605ff61c": {
+    "message": "媒体大小或格式不受支持",
+    "description": "媒体大小或格式不受支持"
+  },
+  "text_5946961e650b": {
+    "message": "媒体文件为空或大小无效",
+    "description": "媒体文件为空或大小无效"
+  },
+  "text_eff3e342f09b": {
+    "message": "媒体文件过大",
+    "description": "媒体文件过大"
+  },
+  "text_709abfe22563": {
+    "message": "媒体文件过大或无法读取",
+    "description": "媒体文件过大或无法读取"
+  },
+  "text_e974f6a0cfc9": {
+    "message": "媒体文件过大，无法导入",
+    "description": "媒体文件过大，无法导入"
+  },
+  "text_1f51454cf09e": {
+    "message": "尚未获取到足够片段，请继续播放或拖动进度条后重试",
+    "description": "尚未获取到足够片段，请继续播放或拖动进度条后重试"
+  },
+  "text_aa415bd1c304": {
+    "message": "已交给画布",
+    "description": "已交给画布"
+  },
+  "text_3db43913c31e": {
+    "message": "已交给画布，请查看结果",
+    "description": "已交给画布，请查看结果"
+  },
+  "text_56f6a0090c6c": {
+    "message": "已停止采集",
+    "description": "已停止采集"
+  },
+  "text_6561f4a0eb60": {
+    "message": "已关闭自动准备",
+    "description": "已关闭自动准备"
+  },
+  "text_dad3e9bd05d7": {
+    "message": "已开启，请刷新素材网页",
+    "description": "已开启，请刷新素材网页"
+  },
+  "text_011729bae7c6": {
+    "message": "已有正在采集的视频，请先停止",
+    "description": "已有正在采集的视频，请先停止"
+  },
+  "text_5be0323e8adc": {
+    "message": "已连接",
+    "description": "已连接"
+  },
+  "text_a737fd72b016": {
+    "message": "已选中",
+    "description": "已选中"
+  },
+  "text_075f28ab6941": {
+    "message": "已选中视频，请继续播放一会儿，再右键发送片段或在插件中发送",
+    "description": "已选中视频，请继续播放一会儿，再右键发送片段或在插件中发送"
+  },
+  "text_bc8b2ff34ecc": {
+    "message": "已选中视频，请继续播放一会儿，再打开插件发送片段",
+    "description": "已选中视频，请继续播放一会儿，再打开插件发送片段"
+  },
+  "text_d65d70a61981": {
+    "message": "已选视频，播放后再发送",
+    "description": "已选视频，播放后再发送"
+  },
+  "text_1b1d3457d7c5": {
+    "message": "已选视频，播放后可发送",
+    "description": "已选视频，播放后可发送"
+  },
+  "text_f987190113ae": {
+    "message": "开启自动准备视频",
+    "description": "开启自动准备视频"
+  },
+  "text_ae3c747b825f": {
+    "message": "打开画布后设置",
+    "description": "打开画布后设置"
+  },
+  "text_7d085a4def8a": {
+    "message": "打开素材网页",
+    "description": "打开素材网页"
+  },
+  "text_251e122b014d": {
+    "message": "找不到当前标签页",
+    "description": "找不到当前标签页"
+  },
+  "text_21b60417ff7f": {
+    "message": "找不到当前网页",
+    "description": "找不到当前网页"
+  },
+  "text_3c90c73f8208": {
+    "message": "接收画布尚未就绪，请重新设置",
+    "description": "接收画布尚未就绪，请重新设置"
+  },
+  "text_50038540d2ee": {
+    "message": "接收画布已关闭或发生变化，请重新设置",
+    "description": "接收画布已关闭或发生变化，请重新设置"
+  },
+  "text_5e3117d3687f": {
+    "message": "接收画布已切换，请重新设置",
+    "description": "接收画布已切换，请重新设置"
+  },
+  "text_1d5a2559d533": {
+    "message": "接收画布已断开，请重新设置",
+    "description": "接收画布已断开，请重新设置"
+  },
+  "text_243a093e97dd": {
+    "message": "接收画布未响应，请检查画布后重试",
+    "description": "接收画布未响应，请检查画布后重试"
+  },
+  "text_5ccf6e145150": {
+    "message": "插件初始化失败",
+    "description": "插件初始化失败"
+  },
+  "text_091b7af9c729": {
+    "message": "播放器尚未加载媒体轨道，请先播放视频后重试",
+    "description": "播放器尚未加载媒体轨道，请先播放视频后重试"
+  },
+  "text_e113c7d13e87": {
+    "message": "操作失败，请重试",
+    "description": "操作失败，请重试"
+  },
+  "text_dc7cd93d6a03": {
+    "message": "无声",
+    "description": "无声"
+  },
+  "text_8df7d7e5effe": {
+    "message": "无效的媒体数据",
+    "description": "无效的媒体数据"
+  },
+  "text_9f5271873fe7": {
+    "message": "无效的插件请求来源",
+    "description": "无效的插件请求来源"
+  },
+  "text_492fe9f3e645": {
+    "message": "无法关联该视频的播放器，可能使用不支持的播放方式",
+    "description": "无法关联该视频的播放器，可能使用不支持的播放方式"
+  },
+  "text_85ba82707d55": {
+    "message": "无法唯一确定视频，请重新选择",
+    "description": "无法唯一确定视频，请重新选择"
+  },
+  "text_4868030d7e1e": {
+    "message": "无法唯一确定链接里的素材，请在插件中选取",
+    "description": "无法唯一确定链接里的素材，请在插件中选取"
+  },
+  "text_e415adcf51cc": {
+    "message": "无法在当前页面采集视频",
+    "description": "无法在当前页面采集视频"
+  },
+  "text_13db10ca83b0": {
+    "message": "无法在此页面选择素材，请切换到普通网页",
+    "description": "无法在此页面选择素材，请切换到普通网页"
+  },
+  "text_f8ecb97b1951": {
+    "message": "无法开始传输",
+    "description": "无法开始传输"
+  },
+  "text_d0c4b964f75c": {
+    "message": "无法查看画布",
+    "description": "无法查看画布"
+  },
+  "text_30562bb9b0fd": {
+    "message": "无法获取媒体，可能需要网站权限、登录或该网站禁止访问",
+    "description": "无法获取媒体，可能需要网站权限、登录或该网站禁止访问"
+  },
+  "text_b29acb5452f9": {
+    "message": "无法获取完整视频，网站可能使用分段播放或限制访问",
+    "description": "无法获取完整视频，网站可能使用分段播放或限制访问"
+  },
+  "text_3cdc5fcecd20": {
+    "message": "无法获取素材来源权限",
+    "description": "无法获取素材来源权限"
+  },
+  "text_79e327a227a9": {
+    "message": "无法获取素材，请重试",
+    "description": "无法获取素材，请重试"
+  },
+  "text_8f5fbc2f063d": {
+    "message": "无法访问媒体所在页面或嵌入区域",
+    "description": "无法访问媒体所在页面或嵌入区域"
+  },
+  "text_013a34a8972e": {
+    "message": "无法识别媒体文件类型，请尝试其他素材",
+    "description": "无法识别媒体文件类型，请尝试其他素材"
+  },
+  "text_5972c8b22117": {
+    "message": "无法识别所选视频",
+    "description": "无法识别所选视频"
+  },
+  "text_01c2ff7fdb66": {
+    "message": "无法识别画布页面，请刷新后重新设置",
+    "description": "无法识别画布页面，请刷新后重新设置"
+  },
+  "text_e9d8a2c89173": {
+    "message": "无法识别选中的媒体",
+    "description": "无法识别选中的媒体"
+  },
+  "text_7d16081f1e51": {
+    "message": "无法识别链接中的素材，请在插件中选取",
+    "description": "无法识别链接中的素材，请在插件中选取"
+  },
+  "text_95684a594fb2": {
+    "message": "无法读取媒体数据",
+    "description": "无法读取媒体数据"
+  },
+  "text_a280615f8fe8": {
+    "message": "无法读取此媒体，请选择其他素材",
+    "description": "无法读取此媒体，请选择其他素材"
+  },
+  "text_4297918f303b": {
+    "message": "无法读取素材",
+    "description": "无法读取素材"
+  },
+  "text_34f182b95d03": {
+    "message": "无法读取视频，可能是分段播放或来源限制",
+    "description": "无法读取视频，可能是分段播放或来源限制"
+  },
+  "text_86e5ec057533": {
+    "message": "无法读取该媒体，请选择其他素材",
+    "description": "无法读取该媒体，请选择其他素材"
+  },
+  "text_bc1e57dffe01": {
+    "message": "无法读取页面中的媒体",
+    "description": "无法读取页面中的媒体"
+  },
+  "text_af648401d08f": {
+    "message": "无法连接画布，请刷新画布后重新设置",
+    "description": "无法连接画布，请刷新画布后重新设置"
+  },
+  "text_a72a7ba31302": {
+    "message": "无法选中素材",
+    "description": "无法选中素材"
+  },
+  "text_ca192032e3dc": {
+    "message": "无法选中素材，请重试",
+    "description": "无法选中素材，请重试"
+  },
+  "text_33e2a62369e8": {
+    "message": "暂不支持此视频分段格式",
+    "description": "暂不支持此视频分段格式"
+  },
+  "text_e68c15a35a56": {
+    "message": "未找到媒体文件，请选择其他素材",
+    "description": "未找到媒体文件，请选择其他素材"
+  },
+  "text_1a983ceb42b8": {
+    "message": "未捕获到播放器，请重新启用采集并刷新页面",
+    "description": "未捕获到播放器，请重新启用采集并刷新页面"
+  },
+  "text_33ee81dfb4c8": {
+    "message": "未捕获视频片段，请刷新网页后重试",
+    "description": "未捕获视频片段，请刷新网页后重试"
+  },
+  "text_b802a8cdf2ae": {
+    "message": "未授权素材来源",
+    "description": "未授权素材来源"
+  },
+  "text_e8405570a0ef": {
+    "message": "未授权访问当前网页",
+    "description": "未授权访问当前网页"
+  },
+  "text_2b6ccee8492c": {
+    "message": "未授权访问素材来源，无法获取该文件",
+    "description": "未授权访问素材来源，无法获取该文件"
+  },
+  "text_d83b4594ab06": {
+    "message": "未授权访问网页",
+    "description": "未授权访问网页"
+  },
+  "text_6e733f038026": {
+    "message": "未知采集操作",
+    "description": "未知采集操作"
+  },
+  "text_2f5f1d6fbfb0": {
+    "message": "未设置",
+    "description": "未设置"
+  },
+  "text_1128520e4d12": {
+    "message": "来源网页已关闭或素材不可读取，请重新选择",
+    "description": "来源网页已关闭或素材不可读取，请重新选择"
+  },
+  "text_b011344b9a86": {
+    "message": "来源页面已关闭或刷新",
+    "description": "来源页面已关闭或刷新"
+  },
+  "text_1c8ff0b6f3f4": {
+    "message": "来源页面已失效",
+    "description": "来源页面已失效"
+  },
+  "text_54730dac7995": {
+    "message": "来自其他标签页",
+    "description": "来自其他标签页"
+  },
+  "text_f07335163e36": {
+    "message": "正在准备…",
+    "description": "正在准备…"
+  },
+  "text_0958a869b5a8": {
+    "message": "正在准备素材…",
+    "description": "正在准备素材…"
+  },
+  "text_af9caf0d45b4": {
+    "message": "正在刷新网页…",
+    "description": "正在刷新网页…"
+  },
+  "text_2d88d503d0ff": {
+    "message": "正在发送",
+    "description": "正在发送"
+  },
+  "text_a29d4e4163dd": {
+    "message": "正在导入素材，不能切换画布",
+    "description": "正在导入素材，不能切换画布"
+  },
+  "text_9264ef122dff": {
+    "message": "正在导入素材，请稍后重试",
+    "description": "正在导入素材，请稍后重试"
+  },
+  "text_8be0ea36a9bb": {
+    "message": "正在连接…",
+    "description": "正在连接…"
+  },
+  "text_8fb14c7a21f6": {
+    "message": "此处有多个图片或视频，请点击更明确的位置",
+    "description": "此处有多个图片或视频，请点击更明确的位置"
+  },
+  "text_45ed68839761": {
+    "message": "没有可授权的素材来源，请重新选择",
+    "description": "没有可授权的素材来源，请重新选择"
+  },
+  "text_f528de3a0360": {
+    "message": "浏览器未允许请求素材权限，请在插件中重新选择素材并授权",
+    "description": "浏览器未允许请求素材权限，请在插件中重新选择素材并授权"
+  },
+  "text_f2297a35a412": {
+    "message": "点击图片或视频 · Esc 取消",
+    "description": "点击图片或视频 · Esc 取消"
+  },
+  "text_908e56fe5ed8": {
+    "message": "片段",
+    "description": "片段"
+  },
+  "text_d43ce9fea21f": {
+    "message": "片段读取位置无效",
+    "description": "片段读取位置无效"
+  },
+  "text_ffa18e6ff358": {
+    "message": "片段读取参数无效",
+    "description": "片段读取参数无效"
+  },
+  "text_3906276fd1bd": {
+    "message": "画布",
+    "description": "画布"
+  },
+  "text_17cbac3b5a56": {
+    "message": "画布已切换，请重新设置",
+    "description": "画布已切换，请重新设置"
+  },
+  "text_8030d856c51e": {
+    "message": "画布当前不能接收拖放，请退出引用选择或关闭遮挡后重试",
+    "description": "画布当前不能接收拖放，请退出引用选择或关闭遮挡后重试"
+  },
+  "text_aadcdbe27e47": {
+    "message": "画布正在处理其他导入，请稍后重试",
+    "description": "画布正在处理其他导入，请稍后重试"
+  },
+  "text_166942d7b92c": {
+    "message": "素材已变化，请重新右键",
+    "description": "素材已变化，请重新右键"
+  },
+  "text_c3f421e695af": {
+    "message": "组装的视频片段无效或过大",
+    "description": "组装的视频片段无效或过大"
+  },
+  "text_d6274cef5f18": {
+    "message": "结果未知，先检查画布",
+    "description": "结果未知，先检查画布"
+  },
+  "text_55671855e220": {
+    "message": "缺少视频初始化数据，请重新启用采集并刷新页面",
+    "description": "缺少视频初始化数据，请重新启用采集并刷新页面"
+  },
+  "text_33a80fdd801e": {
+    "message": "网页媒体不可读取",
+    "description": "网页媒体不可读取"
+  },
+  "text_8666d22236c7": {
+    "message": "网页已切换，请重新开启采集",
+    "description": "网页已切换，请重新开启采集"
+  },
+  "text_84a000c850ea": {
+    "message": "自动准备已关闭",
+    "description": "自动准备已关闭"
+  },
+  "text_b954176bde4b": {
+    "message": "自动采集已开启，无需手动开启",
+    "description": "自动采集已开启，无需手动开启"
+  },
+  "text_205509f30edb": {
+    "message": "获取到的内容不是受支持的视频",
+    "description": "获取到的内容不是受支持的视频"
+  },
+  "text_90c5f553d83c": {
+    "message": "获取到的文件类型与所选素材不符",
+    "description": "获取到的文件类型与所选素材不符"
+  },
+  "text_b6f840ad0511": {
+    "message": "获取到的视频不完整",
+    "description": "获取到的视频不完整"
+  },
+  "text_c20f7618d330": {
+    "message": "视频",
+    "description": "视频"
+  },
+  "text_59a5102cd3a8": {
+    "message": "视频使用了暂不支持的媒体格式",
+    "description": "视频使用了暂不支持的媒体格式"
+  },
+  "text_020b2992328b": {
+    "message": "视频使用了暂不支持的播放时间配置",
+    "description": "视频使用了暂不支持的播放时间配置"
+  },
+  "text_80c2e885309b": {
+    "message": "视频使用了暂不支持的播放时间配置或格式切换",
+    "description": "视频使用了暂不支持的播放时间配置或格式切换"
+  },
+  "text_1dcf698f66c9": {
+    "message": "视频备用来源尚未授权，请在插件中选取视频并授权后重试",
+    "description": "视频备用来源尚未授权，请在插件中选取视频并授权后重试"
+  },
+  "text_107d725e1ad9": {
+    "message": "视频媒体轨道数量过多，暂不支持采集",
+    "description": "视频媒体轨道数量过多，暂不支持采集"
+  },
+  "text_c74a2fb56b4a": {
+    "message": "视频尚未准备好",
+    "description": "视频尚未准备好"
+  },
+  "text_b49c226706c0": {
+    "message": "视频无法发送时使用",
+    "description": "视频无法发送时使用"
+  },
+  "text_5cf0804656d1": {
+    "message": "视频来源已变化",
+    "description": "视频来源已变化"
+  },
+  "text_57c9d3cd07c1": {
+    "message": "视频来源已变化，请重新启用采集",
+    "description": "视频来源已变化，请重新启用采集"
+  },
+  "text_1d9c9223c6bd": {
+    "message": "视频格式不受支持或数据不完整",
+    "description": "视频格式不受支持或数据不完整"
+  },
+  "text_77426c37004b": {
+    "message": "视频片段",
+    "description": "视频片段"
+  },
+  "text_3bc7c8a0daea": {
+    "message": "视频片段信息无效，请重新采集",
+    "description": "视频片段信息无效，请重新采集"
+  },
+  "text_2df0537e60dc": {
+    "message": "视频片段数据无效，请重新采集",
+    "description": "视频片段数据无效，请重新采集"
+  },
+  "text_5a2ff0594539": {
+    "message": "视频片段组装失败",
+    "description": "视频片段组装失败"
+  },
+  "text_697fa8aed661": {
+    "message": "视频片段读取参数无效",
+    "description": "视频片段读取参数无效"
+  },
+  "text_b4cb718a54a0": {
+    "message": "视频组装模块未加载，请重新加载插件",
+    "description": "视频组装模块未加载，请重新加载插件"
+  },
+  "text_f3032139d2a4": {
+    "message": "视频轨道信息无效",
+    "description": "视频轨道信息无效"
+  },
+  "text_99087a23da16": {
+    "message": "视频采集失败",
+    "description": "视频采集失败"
+  },
+  "text_0b3d56ec2eca": {
+    "message": "视频采集失败，请重新启用并刷新页面",
+    "description": "视频采集失败，请重新启用并刷新页面"
+  },
+  "text_669e87560083": {
+    "message": "视频页过多，请关闭其他视频页后刷新",
+    "description": "视频页过多，请关闭其他视频页后刷新"
+  },
+  "text_9b82f53c5ac3": {
+    "message": "设为接收",
+    "description": "设为接收"
+  },
+  "text_7eb58f493d5e": {
+    "message": "设为接收画布",
+    "description": "设为接收画布"
+  },
+  "text_0910589ac00e": {
+    "message": "设置无效",
+    "description": "设置无效"
+  },
+  "text_e6f1a49d2634": {
+    "message": "该视频不是受支持的分段视频",
+    "description": "该视频不是受支持的分段视频"
+  },
+  "text_ae0ccfdade58": {
+    "message": "请保持画布打开",
+    "description": "请保持画布打开"
+  },
+  "text_ae851aea1a67": {
+    "message": "请先准备采集片段",
+    "description": "请先准备采集片段"
+  },
+  "text_63411ce0b3a0": {
+    "message": "请先在网页选择素材",
+    "description": "请先在网页选择素材"
+  },
+  "text_b7b609ecc86e": {
+    "message": "请先打开 Inkloom 的画布页面，再设置接收目标",
+    "description": "请先打开 Inkloom 的画布页面，再设置接收目标"
+  },
+  "text_998ff29284d1": {
+    "message": "请先授权访问当前网页",
+    "description": "请先授权访问当前网页"
+  },
+  "text_8a14c4a6056a": {
+    "message": "请先授权访问网页",
+    "description": "请先授权访问网页"
+  },
+  "text_5f3a396f3b44": {
+    "message": "请先设置接收画布",
+    "description": "请先设置接收画布"
+  },
+  "text_04bcb5f06bf8": {
+    "message": "请先选择素材",
+    "description": "请先选择素材"
+  },
+  "text_250336cd515b": {
+    "message": "请先选择要采集的视频",
+    "description": "请先选择要采集的视频"
+  },
+  "text_c842d7f1539d": {
+    "message": "请切换到视频网页后开启分段采集",
+    "description": "请切换到视频网页后开启分段采集"
+  },
+  "text_924e20315bbd": {
+    "message": "请在素材网页发送",
+    "description": "请在素材网页发送"
+  },
+  "text_f0392be1ca56": {
+    "message": "请打开插件授权",
+    "description": "请打开插件授权"
+  },
+  "text_d31f431eae25": {
+    "message": "请打开需要采集视频的普通网页",
+    "description": "请打开需要采集视频的普通网页"
+  },
+  "text_141b203f34a4": {
+    "message": "请授权素材来源",
+    "description": "请授权素材来源"
+  },
+  "text_c72ad3f4aa4e": {
+    "message": "读取图片失败",
+    "description": "读取图片失败"
+  },
+  "text_94bb837ba76e": {
+    "message": "读取媒体失败",
+    "description": "读取媒体失败"
+  },
+  "text_5428a0f09442": {
+    "message": "还没有接收画布",
+    "description": "还没有接收画布"
+  },
+  "text_ee9ebe523d42": {
+    "message": "连接中…",
+    "description": "连接中…"
+  },
+  "text_a6eef90c991e": {
+    "message": "选取素材",
+    "description": "选取素材"
+  },
+  "text_c51f2a489e3e": {
+    "message": "选取视频",
+    "description": "选取视频"
+  },
+  "text_ecb5b8a5f780": {
+    "message": "选取视频后播放",
+    "description": "选取视频后播放"
+  },
+  "text_6ad3bfdfee35": {
+    "message": "采集中",
+    "description": "采集中"
+  },
+  "text_3331a70d7dab": {
+    "message": "采集已停止",
+    "description": "采集已停止"
+  },
+  "text_80fa0cad2578": {
+    "message": "采集期间视频播放时间配置发生变化，暂不支持采集",
+    "description": "采集期间视频播放时间配置发生变化，暂不支持采集"
+  },
+  "text_2fb33a2d8473": {
+    "message": "采集期间视频格式发生切换，请重新采集",
+    "description": "采集期间视频格式发生切换，请重新采集"
+  },
+  "text_f439bf8103f4": {
+    "message": "采集片段超过内存上限，请缩短播放时间后重试",
+    "description": "采集片段超过内存上限，请缩短播放时间后重试"
+  },
+  "text_0e275bcf37d5": {
+    "message": "采集的视频数据无效或过大，请重新采集",
+    "description": "采集的视频数据无效或过大，请重新采集"
+  },
+  "text_bf82096a066a": {
+    "message": "采集的视频片段数据不完整",
+    "description": "采集的视频片段数据不完整"
+  },
+  "text_4c4214426a4a": {
+    "message": "采集的视频片段数据无效",
+    "description": "采集的视频片段数据无效"
+  },
+  "text_5ea495f6fed2": {
+    "message": "采集请求来源无效",
+    "description": "采集请求来源无效"
+  },
+  "text_0db75b2001aa": {
+    "message": "采集连接无效，请重新启用并刷新页面",
+    "description": "采集连接无效，请重新启用并刷新页面"
+  },
+  "text_da8c89375620": {
+    "message": "采集连接未授权",
+    "description": "采集连接未授权"
+  },
+  "text_025f7e94408a": {
+    "message": "采集连接未授权，请重新启用并刷新页面",
+    "description": "采集连接未授权，请重新启用并刷新页面"
+  },
+  "text_2536dc0989e4": {
+    "message": "采集连接超时，请重新启用并刷新页面",
+    "description": "采集连接超时，请重新启用并刷新页面"
+  },
+  "text_f5ba4bcdbcd5": {
+    "message": "重新选取",
+    "description": "重新选取"
+  },
+  "text_3b78f6bcca15": {
+    "message": "面板加载失败，请重新打开",
+    "description": "面板加载失败，请重新打开"
+  },
+  "text_54e70c8bace4": {
+    "message": "（无声）",
+    "description": "（无声）"
+  },
+  "text_b8d7ccf5e8c7": {
+    "message": "正在准备面板",
+    "description": "正在准备面板"
+  },
+  "text_b12d905b9fcf": {
+    "message": "把灵感送往画布~",
+    "description": "把灵感送往画布~"
+  },
+  "text_56ae3eedcb0e": {
+    "message": "接收画布",
+    "description": "接收画布"
+  },
+  "text_2cd0f3be8738": {
+    "message": "取消",
+    "description": "取消"
+  },
+  "text_db8db0530432": {
+    "message": "查看",
+    "description": "查看"
+  },
+  "text_2ed019095ab4": {
+    "message": "素材传送",
+    "description": "素材传送"
+  },
+  "text_e3236869d04d": {
+    "message": "自动准备视频",
+    "description": "自动准备视频"
+  },
+  "text_7b561f17a5b5": {
+    "message": "了解自动准备视频",
+    "description": "了解自动准备视频"
+  },
+  "text_936ef35701ae": {
+    "message": "自动暂存网页视频片段。开启后，请刷新已打开的网页；发送时才上传。",
+    "description": "自动暂存网页视频片段。开启后，请刷新已打开的网页；发送时才上传。"
+  },
+  "text_5e8298006d05": {
+    "message": "所选素材预览",
+    "description": "所选素材预览"
+  },
+  "text_88cccf3b2a72": {
+    "message": "已选素材",
+    "description": "已选素材"
+  },
+  "text_df607294dbdd": {
+    "message": "右键素材，发送到画布",
+    "description": "右键素材，发送到画布"
+  },
+  "text_eeb7cae179b4": {
+    "message": "图片、视频都支持",
+    "description": "图片、视频都支持"
+  },
+  "text_31a42eb9e6de": {
+    "message": "授权并重试",
+    "description": "授权并重试"
+  },
+  "text_eea2fa7f2c7e": {
+    "message": "手动采集片段",
+    "description": "手动采集片段"
+  },
+  "text_7279a192ddf6": {
+    "message": "开启后会刷新网页，请先保存内容。",
+    "description": "开启后会刷新网页，请先保存内容。"
+  },
+  "text_ee8c3ea9edd0": {
+    "message": "开启采集并刷新",
+    "description": "开启采集并刷新"
+  },
+  "text_6e784b3d0b1b": {
+    "message": "停止采集",
+    "description": "停止采集"
+  },
+  "text_df3d58c7d84b": {
+    "message": "设置",
+    "description": "设置"
+  },
+  "text_127527c89c51": {
+    "message": "语言 / Language",
+    "description": "语言 / Language"
+  },
+  "text_220e00eca1cb": {
+    "message": "跟随浏览器",
+    "description": "跟随浏览器"
+  },
+  "text_9937e365aaf3": {
+    "message": "简体中文",
+    "description": "简体中文"
+  },
+  "text_bd03c0aad701": {
+    "message": "设置已保存",
+    "description": "设置已保存"
+  },
+  "text_22800e64b52c": {
+    "message": "无法保存设置，请重试",
+    "description": "无法保存设置，请重试"
+  },
+  "text_200e093b97fd": {
+    "message": "中文浏览器使用简体中文，其他语言使用英文。",
+    "description": "中文浏览器使用简体中文，其他语言使用英文。"
+  },
+  "text_f2db3712a685": {
+    "message": "自动保存",
+    "description": "自动保存"
+  },
+  "text_d541e6d82a65": {
+    "message": "Forge Anywhere 设置",
+    "description": "Forge Anywhere 设置"
+  },
+  "text_49ad779cbf96": {
+    "message": "视频片段数据不完整",
+    "description": "视频片段数据不完整"
+  },
+  "text_a3a0ab16b1be": {
+    "message": "视频初始化片段发生变化",
+    "description": "视频初始化片段发生变化"
+  },
+  "text_35bc9d55c213": {
+    "message": "暂不支持加密视频",
+    "description": "暂不支持加密视频"
+  },
+  "text_4e7485ea80cb": {
+    "message": "缺少初始化数据或视频片段不连续",
+    "description": "缺少初始化数据或视频片段不连续"
+  },
+  "text_cd1d5c3635c0": {
+    "message": "无法确认视频片段顺序",
+    "description": "无法确认视频片段顺序"
+  },
+  "text_a02e0480588c": {
+    "message": "视频片段不连续，请重新采集",
+    "description": "视频片段不连续，请重新采集"
+  },
+  "text_b3bba8d65df4": {
+    "message": "缺少初始化数据或可用的视频片段",
+    "description": "缺少初始化数据或可用的视频片段"
+  },
+  "text_e11833277f89": {
+    "message": "视频轨道数量不受支持",
+    "description": "视频轨道数量不受支持"
+  },
+  "text_1f676fec6a41": {
+    "message": "已采集的视频片段过大",
+    "description": "已采集的视频片段过大"
+  },
+  "text_875f2dc442ef": {
+    "message": "视频片段数据无效",
+    "description": "视频片段数据无效"
+  },
+  "text_681d84061ad5": {
+    "message": "视频片段时间配置无效",
+    "description": "视频片段时间配置无效"
+  },
+  "text_00a20ef7e346": {
+    "message": "视频片段过长",
+    "description": "视频片段过长"
+  },
+  "text_26bbc50d25e4": {
+    "message": "视频片段时间信息无效",
+    "description": "视频片段时间信息无效"
+  },
+  "text_37691e0730fa": {
+    "message": "播放窗口造成片段不连续，无法安全组装",
+    "description": "播放窗口造成片段不连续，无法安全组装"
+  },
+  "text_8a774a4a7e34": {
+    "message": "播放窗口内没有可用关键帧，无法组装视频片段",
+    "description": "播放窗口内没有可用关键帧，无法组装视频片段"
+  },
+  "text_e3746ed1756c": {
+    "message": "播放窗口内没有完整音频数据，无法组装视频片段",
+    "description": "播放窗口内没有完整音频数据，无法组装视频片段"
+  },
+  "text_c82e9ce7632b": {
+    "message": "视频片段没有可用媒体轨道",
+    "description": "视频片段没有可用媒体轨道"
+  },
+  "text_943964a56316": {
+    "message": "音视频轨道不完整或存在多个轨道，无法安全组装",
+    "description": "音视频轨道不完整或存在多个轨道，无法安全组装"
+  },
+  "text_aeff27982e16": {
+    "message": "暂不支持此音视频编码",
+    "description": "暂不支持此音视频编码"
+  },
+  "text_7167f14f8c33": {
+    "message": "缺少初始化数据或关键帧，无法组装视频片段",
+    "description": "缺少初始化数据或关键帧，无法组装视频片段"
+  },
+  "text_139dd00a5888": {
+    "message": "音视频片段时间范围不一致，请重新采集",
+    "description": "音视频片段时间范围不一致，请重新采集"
+  },
+  "text_167083676948": {
+    "message": "组装后的视频片段过大",
+    "description": "组装后的视频片段过大"
+  },
+  "text_e138bc539817": {
+    "message": "请重新启用采集并选择视频",
+    "description": "请重新启用采集并选择视频"
+  },
+  "text_85bb20a8b3db": {
+    "message": "已选中视频",
+    "description": "已选中视频"
+  },
+  "text_94bc3d40defe": {
+    "message": "未授权",
+    "description": "未授权"
+  },
+  "text_d20d60925492": {
+    "message": "正在准备视频",
+    "description": "正在准备视频"
+  },
+  "extensionDescription": {
+    "message": "把灵感送往画布~"
+  },
+  "openForge": {
+    "message": "打开 Forge",
+    "description": "打开 Forge"
+  }
+}

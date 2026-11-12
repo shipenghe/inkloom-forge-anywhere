@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title data-i18n="text_d541e6d82a65">Forge Anywhere settings</title>
+    <link rel="stylesheet" href="options.css" />
+    <script src="i18n-data.js" defer></script>
+    <script src="i18n.js" defer></script>
+    <script src="options.js" defer></script>
+  </head>
+  <body>
+    <main id="settings" aria-busy="true" hidden>
+      <header>
+        <img src="icons/icon48.png" alt="" />
+        <div>
+          <h1>Forge Anywhere</h1>
+          <p data-i18n="text_df3d58c7d84b">Settings</p>
+        </div>
+        <span>v1.0.5</span>
+      </header>
+      <section>
+        <label for="language" data-i18n="text_127527c89c51">
+          Language / 语言
+        </label>
+        <select id="language" disabled>
+          <option value="auto" data-i18n="text_220e00eca1cb">
+            Follow browser
+          </option>
+          <option value="zh_CN">简体中文</option>
+          <option value="en">English</option>
+        </select>
+        <p class="hint" data-i18n="text_200e093b97fd">
+          Chinese browser languages use Simplified Chinese. All others use
+          English.
+        </p>
+      </section>
+      <footer>
+        <span data-i18n="text_f2db3712a685">Changes save automatically.</span>
+        <span id="status" role="status" aria-live="polite"></span>
+      </footer>
+    </main>
+  </body>
+</html>

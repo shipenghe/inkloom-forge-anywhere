@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Forge Anywhere</title>
+    <style>
+      /* Give Chrome the final surface size and color before loading assets. */
+      :root,
+      body {
+        width: 356px;
+        height: var(--popup-height, 394px);
+        margin: 0;
+        background: #fbfafb;
+        color-scheme: light;
+        overflow: hidden;
+      }
+      #panel[data-ready='false'] {
+        visibility: hidden;
+      }
+      #panel {
+        position: absolute;
+        inset: 0;
+        bottom: auto;
+        height: var(--popup-height, 394px);
+      }
+      #popup-shell {
+        position: absolute;
+        inset: 0;
+        width: 356px;
+        height: var(--popup-height, 394px);
+        min-width: 356px;
+        min-height: var(--popup-height, 394px);
+        box-sizing: border-box;
+        padding: 20px;
+        background: #fbfafb;
+      }
+      #popup-shell > div {
+        background: #f1eef2;
+        border-radius: 18px;
+      }
+      #popup-shell > div:first-child {
+        width: 176px;
+        height: 40px;
+        margin-bottom: 16px;
+      }
+      #popup-shell > div:nth-child(2) {
+        height: 92px;
+      }
+      #popup-shell > div:last-child {
+        height: 162px;
+        margin-top: 42px;
+      }
+    </style>
+    <link id="panel-styles" rel="stylesheet" href="popup.css" media="print" />
+  </head>
+  <body>
+    <div
+      id="popup-shell"
+      role="status"
+      aria-label="正在准备面板"
+      data-i18n-aria-label="text_b8d7ccf5e8c7"
+      aria-busy="true"
+    >
+      <div aria-hidden="true"></div>
+      <div aria-hidden="true"></div>
+      <div aria-hidden="true"></div>
+    </div>
+    <main id="panel" class="panel" aria-busy="true" data-ready="false">
+      <header class="header">
+        <a
+          class="brand-mark"
+          href="https://forge.art/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="打开 Forge"
+          aria-label="打开 Forge"
+          data-i18n-title="openForge"
+          data-i18n-aria-label="openForge"
+        >
+          <img src="icons/icon48.png" alt="" />
+        </a>
+        <div class="header-copy">
+          <h1>Forge Anywhere</h1>
+          <p data-i18n="text_b12d905b9fcf">把灵感送往画布~</p>
+        </div>
+        <div class="header-actions">
+          <span class="prototype" title="Forge Anywhere v1.0.5">v1.0.5</span>
+          <button
+            id="open-settings"
+            class="settings-button"
+            type="button"
+            data-i18n-title="text_df3d58c7d84b"
+            data-i18n-aria-label="text_df3d58c7d84b"
+            title="设置"
+            aria-label="设置"
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="m9 3-.5 2a7 7 0 0 0-1.5.9L5 5.3 3 8.7l1.5 1.4a7 7 0 0 0 0 1.8L3 13.3l2 3.4 2-.6a7 7 0 0 0 1.5.9l.5 2h4l.5-2a7 7 0 0 0 1.5-.9l2 .6 2-3.4-1.5-1.4a7 7 0 0 0 0-1.8L19 8.7l-2-3.4-2 .6a7 7 0 0 0-1.5-.9L13 3H9Z"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
+              <circle
+                cx="11"
+                cy="11"
+                r="2.8"
+                stroke="currentColor"
+                stroke-width="1.4"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section
+        id="target-card"
+        class="target-card"
+        aria-labelledby="target-label"
+        data-connected="false"
+      >
+        <div class="section-heading">
+          <span id="target-label" data-i18n="text_56ae3eedcb0e">接收画布</span>
+          <span id="target-state" class="state-pill" data-connected="false">
+            <span class="state-dot"></span>
+            <span id="target-state-text">未设置</span>
+          </span>
+        </div>
+        <div class="target-content">
+          <div class="target-copy">
+            <p id="target" class="target-name">还没有接收画布</p>
+            <p
+              id="target-detail"
+              class="target-detail"
+              role="status"
+              aria-live="polite"
+            >
+              打开画布后设置
+            </p>
+          </div>
+          <div id="target-actions" class="target-actions">
+            <button
+              id="set-target"
+              class="button button-dark button-small"
+              type="button"
+            >
+              设为接收
+            </button>
+            <button
+              id="view-target"
+              class="button button-quiet button-small"
+              type="button"
+              hidden
+              data-i18n="text_db8db0530432"
+            >
+              查看
+            </button>
+            <button
+              id="clear-target"
+              class="button button-quiet button-small"
+              type="button"
+              hidden
+              data-i18n="text_2cd0f3be8738"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="capture-section" aria-labelledby="capture-label">
+        <div class="section-heading capture-heading">
+          <span id="capture-label" data-i18n="text_2ed019095ab4">素材传送</span>
+          <div class="auto-control">
+            <span id="auto-video-label" data-i18n="text_e3236869d04d">
+              自动准备视频
+            </span>
+            <span class="help">
+              <button
+                class="help-button"
+                type="button"
+                aria-label="了解自动准备视频"
+                data-i18n-aria-label="text_7b561f17a5b5"
+                aria-describedby="auto-video-help"
+              >
+                ?
+              </button>
+              <span
+                id="auto-video-help"
+                class="tooltip"
+                role="tooltip"
+                data-i18n="text_936ef35701ae"
+              >
+                自动暂存网页视频片段。开启后，请刷新已打开的网页；发送时才上传。
+              </span>
+            </span>
+            <button
+              id="auto-video-toggle"
+              class="switch"
+              type="button"
+              role="switch"
+              aria-checked="false"
+              aria-labelledby="auto-video-label"
+              disabled
+            >
+              <span></span>
+            </button>
+          </div>
+        </div>
+        <div id="media-card" class="media-card" aria-busy="false">
+          <div id="selection-panel" class="selection-panel" hidden>
+            <div class="selection-heading">
+              <img
+                id="selection-preview"
+                class="selection-preview"
+                alt="所选素材预览"
+                data-i18n-alt="text_5e8298006d05"
+                hidden
+              />
+              <span
+                id="selection-icon"
+                class="selection-icon"
+                aria-hidden="true"
+              >
+                <svg id="image-icon" viewBox="0 0 24 24" fill="none">
+                  <rect
+                    x="3.5"
+                    y="3.5"
+                    width="17"
+                    height="17"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  />
+                  <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+                  <path
+                    d="m4 17 5-5 3 3 3-4 5 6"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <svg id="video-icon" viewBox="0 0 24 24" fill="none" hidden>
+                  <rect
+                    x="3.5"
+                    y="3.5"
+                    width="17"
+                    height="17"
+                    rx="4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  />
+                  <path d="m10 8 6 4-6 4V8Z" fill="currentColor" />
+                </svg>
+              </span>
+              <div class="selection-copy">
+                <span id="selection">已选素材</span>
+                <p id="selection-title" class="selection-title" hidden></p>
+                <p id="selection-detail" class="selection-detail"></p>
+              </div>
+            </div>
+          </div>
+          <div id="guide" class="guide">
+            <div class="guide-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M7.5 4.25h5A4.75 4.75 0 0 1 17.25 9v6a4.75 4.75 0 0 1-9.5 0V9A4.75 4.75 0 0 1 12.5 4.25M12.5 4.5v5.75"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="guide-title" data-i18n="text_df607294dbdd">
+                右键素材，发送到画布
+              </p>
+              <p class="guide-copy" data-i18n="text_eeb7cae179b4">
+                图片、视频都支持
+              </p>
+            </div>
+          </div>
+          <div class="media-actions">
+            <button
+              id="import-media"
+              class="button button-dark"
+              type="button"
+              hidden
+            >
+              发送到画布
+            </button>
+            <button
+              id="authorize-video"
+              class="button button-dark"
+              type="button"
+              hidden
+              data-i18n="text_31a42eb9e6de"
+            >
+              授权并重试
+            </button>
+            <button
+              id="select-media"
+              class="button button-outline"
+              type="button"
+            >
+              选取素材
+            </button>
+          </div>
+          <p
+            id="media-status"
+            class="media-status"
+            role="status"
+            aria-live="polite"
+          >
+            <span id="capture-hint">先设置接收画布</span>
+            <span id="media-feedback"></span>
+          </p>
+        </div>
+        <details id="video-options" class="video-options">
+          <summary>
+            <span data-i18n="text_eea2fa7f2c7e">手动采集片段</span>
+            <span id="video-summary-hint" class="summary-hint">
+              视频无法发送时使用
+            </span>
+          </summary>
+          <p
+            id="video-description"
+            class="guide-copy"
+            data-i18n="text_7279a192ddf6"
+          >
+            开启后会刷新网页，请先保存内容。
+          </p>
+          <p id="video-state" class="guide-copy" hidden></p>
+          <button
+            id="prepare-video"
+            class="button button-outline"
+            type="button"
+            data-i18n="text_ee8c3ea9edd0"
+          >
+            开启采集并刷新
+          </button>
+          <button
+            id="stop-video"
+            class="button button-quiet"
+            type="button"
+            hidden
+            data-i18n="text_6e784b3d0b1b"
+          >
+            停止采集
+          </button>
+        </details>
+      </section>
+    </main>
+    <script src="i18n-data.js" defer></script>
+    <script src="i18n.js" defer></script>
+    <script src="popup.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,1017 @@
+{
+  "text_ab974f89d848": {
+    "message": "Next: choose a video",
+    "description": "下一步：选取视频"
+  },
+  "text_56d1af4f4047": {
+    "message": "AVIF isn’t supported",
+    "description": "不支持 AVIF"
+  },
+  "text_9f0597d87722": {
+    "message": "GIF isn’t supported",
+    "description": "不支持 GIF"
+  },
+  "text_6e574d24d6d5": {
+    "message": "Animated WebP isn’t supported",
+    "description": "不支持动态 WebP"
+  },
+  "text_b21d7b2bc7af": {
+    "message": "This image format isn’t supported",
+    "description": "不支持此图片格式"
+  },
+  "text_85dade959621": {
+    "message": "This action isn’t supported",
+    "description": "不支持的操作"
+  },
+  "text_81351a9e2bb1": {
+    "message": "This media isn’t supported",
+    "description": "不支持该媒体"
+  },
+  "text_f9473d73795f": {
+    "message": "This URL type isn’t supported",
+    "description": "不支持该素材的地址类型"
+  },
+  "text_0b5261229a81": {
+    "message": "This video format isn’t supported",
+    "description": "不支持该视频格式"
+  },
+  "text_54b5edf8d197": {
+    "message": "Still working, please wait",
+    "description": "仍在处理中，请稍候"
+  },
+  "text_b3673af1dda6": {
+    "message": "Set a destination first",
+    "description": "先设置接收画布"
+  },
+  "text_c78dffe1e8ab": {
+    "message": "Full video",
+    "description": "全片"
+  },
+  "text_6793241958c9": {
+    "message": "Turn off auto-prepare",
+    "description": "关闭自动准备视频"
+  },
+  "text_871be2654869": {
+    "message": "Preparing…",
+    "description": "准备中…"
+  },
+  "text_3623003f7b25": {
+    "message": "Video capture failed",
+    "description": "分段采集失败"
+  },
+  "text_5a4315cc7ef7": {
+    "message": "Capture disconnected. Start again and choose a video",
+    "description": "分段采集已断开，请重新开启并选择视频"
+  },
+  "text_4bb68d686215": {
+    "message": "The video page changed. Start capture again",
+    "description": "分段采集页面已关闭或刷新，请重新开启采集"
+  },
+  "text_aec4cce16b8e": {
+    "message": "The capture page is no longer available",
+    "description": "分段采集页面已失效"
+  },
+  "text_eff514b8b83f": {
+    "message": "Change",
+    "description": "切换"
+  },
+  "text_44daaea5af1c": {
+    "message": "Switch to a media page",
+    "description": "切换到素材网页"
+  },
+  "text_309c9371a28e": {
+    "message": "Send to canvas",
+    "description": "发送到画布"
+  },
+  "text_fafb3b5d3a51": {
+    "message": "Send to canvas (set a destination first)",
+    "description": "发送到画布（请先设置接收画布）"
+  },
+  "text_46ab169e0354": {
+    "message": "Send image to canvas",
+    "description": "发送图片到画布"
+  },
+  "text_ac77953a1e06": {
+    "message": "Failed",
+    "description": "发送失败"
+  },
+  "text_bbf944b6d1f1": {
+    "message": "Couldn’t send. Try again",
+    "description": "发送失败，请重试"
+  },
+  "text_ff1cbb70ec00": {
+    "message": "Couldn’t send media",
+    "description": "发送媒体失败"
+  },
+  "text_fcf83c89d10d": {
+    "message": "Sent",
+    "description": "发送完成"
+  },
+  "text_61499aa32bfe": {
+    "message": "Send media to canvas",
+    "description": "发送素材到画布"
+  },
+  "text_d967596291f0": {
+    "message": "Send video to canvas",
+    "description": "发送视频到画布"
+  },
+  "text_3930ebef6a42": {
+    "message": "Open a webpage to capture video",
+    "description": "只能在普通网页采集视频"
+  },
+  "text_d24c10d37db0": {
+    "message": "Image",
+    "description": "图片"
+  },
+  "text_75efeb9427be": {
+    "message": "Transfer incomplete. Try again",
+    "description": "媒体传输不完整，请重试"
+  },
+  "text_942de92beeb9": {
+    "message": "Transfer interrupted. Try again",
+    "description": "媒体传输已中断，请重试"
+  },
+  "text_ff4c617d8b49": {
+    "message": "Invalid transfer data. Try again",
+    "description": "媒体传输数据无效，请重试"
+  },
+  "text_7cde605ff61c": {
+    "message": "Unsupported file size or format",
+    "description": "媒体大小或格式不受支持"
+  },
+  "text_5946961e650b": {
+    "message": "The file is empty or invalid",
+    "description": "媒体文件为空或大小无效"
+  },
+  "text_eff3e342f09b": {
+    "message": "The file is too large",
+    "description": "媒体文件过大"
+  },
+  "text_709abfe22563": {
+    "message": "The file is too large or unreadable",
+    "description": "媒体文件过大或无法读取"
+  },
+  "text_e974f6a0cfc9": {
+    "message": "The file is too large to send",
+    "description": "媒体文件过大，无法导入"
+  },
+  "text_1f51454cf09e": {
+    "message": "Not enough video data yet. Keep playing and try again",
+    "description": "尚未获取到足够片段，请继续播放或拖动进度条后重试"
+  },
+  "text_aa415bd1c304": {
+    "message": "Sent to canvas",
+    "description": "已交给画布"
+  },
+  "text_3db43913c31e": {
+    "message": "Sent to canvas. Check the result",
+    "description": "已交给画布，请查看结果"
+  },
+  "text_56f6a0090c6c": {
+    "message": "Capture stopped",
+    "description": "已停止采集"
+  },
+  "text_6561f4a0eb60": {
+    "message": "Auto-prepare is off",
+    "description": "已关闭自动准备"
+  },
+  "text_dad3e9bd05d7": {
+    "message": "Auto-prepare is on. Refresh the media page",
+    "description": "已开启，请刷新素材网页"
+  },
+  "text_011729bae7c6": {
+    "message": "Another video is being captured. Stop it first",
+    "description": "已有正在采集的视频，请先停止"
+  },
+  "text_5be0323e8adc": {
+    "message": "Connected",
+    "description": "已连接"
+  },
+  "text_a737fd72b016": {
+    "message": "Selected",
+    "description": "已选中"
+  },
+  "text_075f28ab6941": {
+    "message": "Video selected. Keep playing, then send again",
+    "description": "已选中视频，请继续播放一会儿，再右键发送片段或在插件中发送"
+  },
+  "text_bc8b2ff34ecc": {
+    "message": "Video selected. Keep playing, then send from the extension",
+    "description": "已选中视频，请继续播放一会儿，再打开插件发送片段"
+  },
+  "text_d65d70a61981": {
+    "message": "Video selected. Play it, then send",
+    "description": "已选视频，播放后再发送"
+  },
+  "text_1b1d3457d7c5": {
+    "message": "Video selected. Play it, then send",
+    "description": "已选视频，播放后可发送"
+  },
+  "text_f987190113ae": {
+    "message": "Turn on auto-prepare",
+    "description": "开启自动准备视频"
+  },
+  "text_ae3c747b825f": {
+    "message": "Open a canvas to set it",
+    "description": "打开画布后设置"
+  },
+  "text_7d085a4def8a": {
+    "message": "Open a media page",
+    "description": "打开素材网页"
+  },
+  "text_251e122b014d": {
+    "message": "Can’t find the current tab",
+    "description": "找不到当前标签页"
+  },
+  "text_21b60417ff7f": {
+    "message": "Can’t find the current page",
+    "description": "找不到当前网页"
+  },
+  "text_3c90c73f8208": {
+    "message": "Canvas isn’t ready. Set it again",
+    "description": "接收画布尚未就绪，请重新设置"
+  },
+  "text_50038540d2ee": {
+    "message": "The canvas closed or changed. Set it again",
+    "description": "接收画布已关闭或发生变化，请重新设置"
+  },
+  "text_5e3117d3687f": {
+    "message": "The canvas changed. Set it again",
+    "description": "接收画布已切换，请重新设置"
+  },
+  "text_1d5a2559d533": {
+    "message": "Canvas disconnected. Set it again",
+    "description": "接收画布已断开，请重新设置"
+  },
+  "text_243a093e97dd": {
+    "message": "Canvas isn’t responding. Check it and try again",
+    "description": "接收画布未响应，请检查画布后重试"
+  },
+  "text_5ccf6e145150": {
+    "message": "Couldn’t load the extension",
+    "description": "插件初始化失败"
+  },
+  "text_091b7af9c729": {
+    "message": "Video tracks aren’t ready. Play the video and try again",
+    "description": "播放器尚未加载媒体轨道，请先播放视频后重试"
+  },
+  "text_e113c7d13e87": {
+    "message": "Something went wrong. Try again",
+    "description": "操作失败，请重试"
+  },
+  "text_dc7cd93d6a03": {
+    "message": "No audio",
+    "description": "无声"
+  },
+  "text_8df7d7e5effe": {
+    "message": "Invalid media data",
+    "description": "无效的媒体数据"
+  },
+  "text_9f5271873fe7": {
+    "message": "Invalid extension request",
+    "description": "无效的插件请求来源"
+  },
+  "text_492fe9f3e645": {
+    "message": "This player couldn’t be linked to its video data",
+    "description": "无法关联该视频的播放器，可能使用不支持的播放方式"
+  },
+  "text_85ba82707d55": {
+    "message": "Choose a single video",
+    "description": "无法唯一确定视频，请重新选择"
+  },
+  "text_4868030d7e1e": {
+    "message": "Choose the media from the extension",
+    "description": "无法唯一确定链接里的素材，请在插件中选取"
+  },
+  "text_e415adcf51cc": {
+    "message": "Capture isn’t available on this page",
+    "description": "无法在当前页面采集视频"
+  },
+  "text_13db10ca83b0": {
+    "message": "Open a webpage to choose media",
+    "description": "无法在此页面选择素材，请切换到普通网页"
+  },
+  "text_f8ecb97b1951": {
+    "message": "Couldn’t start the transfer",
+    "description": "无法开始传输"
+  },
+  "text_d0c4b964f75c": {
+    "message": "Couldn’t open the canvas",
+    "description": "无法查看画布"
+  },
+  "text_30562bb9b0fd": {
+    "message": "Couldn’t fetch media. Check site access",
+    "description": "无法获取媒体，可能需要网站权限、登录或该网站禁止访问"
+  },
+  "text_b29acb5452f9": {
+    "message": "Couldn’t fetch the full video",
+    "description": "无法获取完整视频，网站可能使用分段播放或限制访问"
+  },
+  "text_3cdc5fcecd20": {
+    "message": "Couldn’t get access to the media source",
+    "description": "无法获取素材来源权限"
+  },
+  "text_79e327a227a9": {
+    "message": "Couldn’t fetch media. Try again",
+    "description": "无法获取素材，请重试"
+  },
+  "text_8f5fbc2f063d": {
+    "message": "Can’t access the media’s page or frame",
+    "description": "无法访问媒体所在页面或嵌入区域"
+  },
+  "text_013a34a8972e": {
+    "message": "Unknown media type. Choose another item",
+    "description": "无法识别媒体文件类型，请尝试其他素材"
+  },
+  "text_5972c8b22117": {
+    "message": "Can’t identify the selected video",
+    "description": "无法识别所选视频"
+  },
+  "text_01c2ff7fdb66": {
+    "message": "Can’t identify this canvas. Refresh and set it again",
+    "description": "无法识别画布页面，请刷新后重新设置"
+  },
+  "text_e9d8a2c89173": {
+    "message": "Can’t identify the selected media",
+    "description": "无法识别选中的媒体"
+  },
+  "text_7d16081f1e51": {
+    "message": "Choose the media from the extension",
+    "description": "无法识别链接中的素材，请在插件中选取"
+  },
+  "text_95684a594fb2": {
+    "message": "Couldn’t read media data",
+    "description": "无法读取媒体数据"
+  },
+  "text_a280615f8fe8": {
+    "message": "Choose another media item",
+    "description": "无法读取此媒体，请选择其他素材"
+  },
+  "text_4297918f303b": {
+    "message": "Couldn’t read this media",
+    "description": "无法读取素材"
+  },
+  "text_34f182b95d03": {
+    "message": "Couldn’t read the video file",
+    "description": "无法读取视频，可能是分段播放或来源限制"
+  },
+  "text_86e5ec057533": {
+    "message": "Choose another media item",
+    "description": "无法读取该媒体，请选择其他素材"
+  },
+  "text_bc1e57dffe01": {
+    "message": "Couldn’t read the page’s media",
+    "description": "无法读取页面中的媒体"
+  },
+  "text_af648401d08f": {
+    "message": "Couldn’t connect. Refresh the canvas and set it again",
+    "description": "无法连接画布，请刷新画布后重新设置"
+  },
+  "text_a72a7ba31302": {
+    "message": "Couldn’t select media",
+    "description": "无法选中素材"
+  },
+  "text_ca192032e3dc": {
+    "message": "Couldn’t select media. Try again",
+    "description": "无法选中素材，请重试"
+  },
+  "text_33e2a62369e8": {
+    "message": "This video format isn’t supported",
+    "description": "暂不支持此视频分段格式"
+  },
+  "text_e68c15a35a56": {
+    "message": "No media found. Choose another item",
+    "description": "未找到媒体文件，请选择其他素材"
+  },
+  "text_1a983ceb42b8": {
+    "message": "Player not captured. Refresh the page",
+    "description": "未捕获到播放器，请重新启用采集并刷新页面"
+  },
+  "text_33ee81dfb4c8": {
+    "message": "Video not prepared yet. Refresh the page",
+    "description": "未捕获视频片段，请刷新网页后重试"
+  },
+  "text_b802a8cdf2ae": {
+    "message": "Media access wasn’t granted",
+    "description": "未授权素材来源"
+  },
+  "text_e8405570a0ef": {
+    "message": "Page access wasn’t granted",
+    "description": "未授权访问当前网页"
+  },
+  "text_2b6ccee8492c": {
+    "message": "Media access wasn’t granted",
+    "description": "未授权访问素材来源，无法获取该文件"
+  },
+  "text_d83b4594ab06": {
+    "message": "Website access wasn’t granted",
+    "description": "未授权访问网页"
+  },
+  "text_6e733f038026": {
+    "message": "Unknown capture action",
+    "description": "未知采集操作"
+  },
+  "text_2f5f1d6fbfb0": {
+    "message": "Not set",
+    "description": "未设置"
+  },
+  "text_1128520e4d12": {
+    "message": "Source unavailable. Choose the media again",
+    "description": "来源网页已关闭或素材不可读取，请重新选择"
+  },
+  "text_b011344b9a86": {
+    "message": "The source page closed or refreshed",
+    "description": "来源页面已关闭或刷新"
+  },
+  "text_1c8ff0b6f3f4": {
+    "message": "The source page is no longer available",
+    "description": "来源页面已失效"
+  },
+  "text_54730dac7995": {
+    "message": "From another tab",
+    "description": "来自其他标签页"
+  },
+  "text_f07335163e36": {
+    "message": "Preparing…",
+    "description": "正在准备…"
+  },
+  "text_0958a869b5a8": {
+    "message": "Preparing media…",
+    "description": "正在准备素材…"
+  },
+  "text_af9caf0d45b4": {
+    "message": "Refreshing the page…",
+    "description": "正在刷新网页…"
+  },
+  "text_2d88d503d0ff": {
+    "message": "Sending",
+    "description": "正在发送"
+  },
+  "text_a29d4e4163dd": {
+    "message": "A transfer is in progress. Wait before switching",
+    "description": "正在导入素材，不能切换画布"
+  },
+  "text_9264ef122dff": {
+    "message": "A transfer is in progress. Please wait",
+    "description": "正在导入素材，请稍后重试"
+  },
+  "text_8be0ea36a9bb": {
+    "message": "Connecting…",
+    "description": "正在连接…"
+  },
+  "text_8fb14c7a21f6": {
+    "message": "Multiple media items here. Choose a more specific spot",
+    "description": "此处有多个图片或视频，请点击更明确的位置"
+  },
+  "text_45ed68839761": {
+    "message": "No source to authorize. Choose the media again",
+    "description": "没有可授权的素材来源，请重新选择"
+  },
+  "text_f528de3a0360": {
+    "message": "Open the extension to grant media access",
+    "description": "浏览器未允许请求素材权限，请在插件中重新选择素材并授权"
+  },
+  "text_f2297a35a412": {
+    "message": "Click an image or video · Esc to cancel",
+    "description": "点击图片或视频 · Esc 取消"
+  },
+  "text_908e56fe5ed8": {
+    "message": "Clip",
+    "description": "片段"
+  },
+  "text_d43ce9fea21f": {
+    "message": "Invalid clip read position",
+    "description": "片段读取位置无效"
+  },
+  "text_ffa18e6ff358": {
+    "message": "Invalid clip read request",
+    "description": "片段读取参数无效"
+  },
+  "text_3906276fd1bd": {
+    "message": "Canvas",
+    "description": "画布"
+  },
+  "text_17cbac3b5a56": {
+    "message": "The canvas changed. Set it again",
+    "description": "画布已切换，请重新设置"
+  },
+  "text_8030d856c51e": {
+    "message": "Canvas can’t accept files. Close overlays and try again",
+    "description": "画布当前不能接收拖放，请退出引用选择或关闭遮挡后重试"
+  },
+  "text_aadcdbe27e47": {
+    "message": "Canvas is busy. Try again shortly",
+    "description": "画布正在处理其他导入，请稍后重试"
+  },
+  "text_166942d7b92c": {
+    "message": "Media changed. Right-click it again",
+    "description": "素材已变化，请重新右键"
+  },
+  "text_c3f421e695af": {
+    "message": "The assembled clip is invalid or too large",
+    "description": "组装的视频片段无效或过大"
+  },
+  "text_d6274cef5f18": {
+    "message": "Result unknown. Check the canvas first",
+    "description": "结果未知，先检查画布"
+  },
+  "text_55671855e220": {
+    "message": "Missing video initialization data. Refresh the page",
+    "description": "缺少视频初始化数据，请重新启用采集并刷新页面"
+  },
+  "text_33a80fdd801e": {
+    "message": "This media can’t be read",
+    "description": "网页媒体不可读取"
+  },
+  "text_8666d22236c7": {
+    "message": "The page changed. Start capture again",
+    "description": "网页已切换，请重新开启采集"
+  },
+  "text_84a000c850ea": {
+    "message": "Auto-prepare is off",
+    "description": "自动准备已关闭"
+  },
+  "text_b954176bde4b": {
+    "message": "Auto-prepare is already on",
+    "description": "自动采集已开启，无需手动开启"
+  },
+  "text_205509f30edb": {
+    "message": "The response isn’t a supported video",
+    "description": "获取到的内容不是受支持的视频"
+  },
+  "text_90c5f553d83c": {
+    "message": "The file doesn’t match the selected media type",
+    "description": "获取到的文件类型与所选素材不符"
+  },
+  "text_b6f840ad0511": {
+    "message": "The video file is incomplete",
+    "description": "获取到的视频不完整"
+  },
+  "text_c20f7618d330": {
+    "message": "Video",
+    "description": "视频"
+  },
+  "text_59a5102cd3a8": {
+    "message": "This video format isn’t supported",
+    "description": "视频使用了暂不支持的媒体格式"
+  },
+  "text_020b2992328b": {
+    "message": "This video timeline isn’t supported",
+    "description": "视频使用了暂不支持的播放时间配置"
+  },
+  "text_80c2e885309b": {
+    "message": "This video timeline or format change isn’t supported",
+    "description": "视频使用了暂不支持的播放时间配置或格式切换"
+  },
+  "text_1dcf698f66c9": {
+    "message": "Open the extension to grant media access",
+    "description": "视频备用来源尚未授权，请在插件中选取视频并授权后重试"
+  },
+  "text_107d725e1ad9": {
+    "message": "Too many media tracks",
+    "description": "视频媒体轨道数量过多，暂不支持采集"
+  },
+  "text_c74a2fb56b4a": {
+    "message": "Video isn’t ready yet",
+    "description": "视频尚未准备好"
+  },
+  "text_b49c226706c0": {
+    "message": "Use if a video won’t send",
+    "description": "视频无法发送时使用"
+  },
+  "text_5cf0804656d1": {
+    "message": "The video source changed",
+    "description": "视频来源已变化"
+  },
+  "text_57c9d3cd07c1": {
+    "message": "Video changed. Start capture again",
+    "description": "视频来源已变化，请重新启用采集"
+  },
+  "text_1d9c9223c6bd": {
+    "message": "Unsupported or incomplete video data",
+    "description": "视频格式不受支持或数据不完整"
+  },
+  "text_77426c37004b": {
+    "message": "Video clip",
+    "description": "视频片段"
+  },
+  "text_3bc7c8a0daea": {
+    "message": "Invalid clip information. Start again",
+    "description": "视频片段信息无效，请重新采集"
+  },
+  "text_2df0537e60dc": {
+    "message": "Invalid clip data. Start again",
+    "description": "视频片段数据无效，请重新采集"
+  },
+  "text_5a2ff0594539": {
+    "message": "Couldn’t assemble the video clip",
+    "description": "视频片段组装失败"
+  },
+  "text_697fa8aed661": {
+    "message": "Invalid clip read request",
+    "description": "视频片段读取参数无效"
+  },
+  "text_b4cb718a54a0": {
+    "message": "Video tools didn’t load. Reload the extension",
+    "description": "视频组装模块未加载，请重新加载插件"
+  },
+  "text_f3032139d2a4": {
+    "message": "Invalid video tracks",
+    "description": "视频轨道信息无效"
+  },
+  "text_99087a23da16": {
+    "message": "Video capture failed",
+    "description": "视频采集失败"
+  },
+  "text_0b3d56ec2eca": {
+    "message": "Video capture failed. Refresh the page",
+    "description": "视频采集失败，请重新启用并刷新页面"
+  },
+  "text_669e87560083": {
+    "message": "Too many video pages. Close some and refresh",
+    "description": "视频页过多，请关闭其他视频页后刷新"
+  },
+  "text_9b82f53c5ac3": {
+    "message": "Set destination",
+    "description": "设为接收"
+  },
+  "text_7eb58f493d5e": {
+    "message": "Set as destination",
+    "description": "设为接收画布"
+  },
+  "text_0910589ac00e": {
+    "message": "Invalid setting",
+    "description": "设置无效"
+  },
+  "text_e6f1a49d2634": {
+    "message": "This segmented video isn’t supported",
+    "description": "该视频不是受支持的分段视频"
+  },
+  "text_ae0ccfdade58": {
+    "message": "Keep the canvas open",
+    "description": "请保持画布打开"
+  },
+  "text_ae851aea1a67": {
+    "message": "Prepare a video clip first",
+    "description": "请先准备采集片段"
+  },
+  "text_63411ce0b3a0": {
+    "message": "Choose media on the page first",
+    "description": "请先在网页选择素材"
+  },
+  "text_b7b609ecc86e": {
+    "message": "Open a canvas before setting the destination",
+    "description": "请先打开 Inkloom 的画布页面，再设置接收目标"
+  },
+  "text_998ff29284d1": {
+    "message": "Grant page access first",
+    "description": "请先授权访问当前网页"
+  },
+  "text_8a14c4a6056a": {
+    "message": "Grant website access first",
+    "description": "请先授权访问网页"
+  },
+  "text_5f3a396f3b44": {
+    "message": "Set a destination canvas first",
+    "description": "请先设置接收画布"
+  },
+  "text_04bcb5f06bf8": {
+    "message": "Choose media first",
+    "description": "请先选择素材"
+  },
+  "text_250336cd515b": {
+    "message": "Choose a video to capture first",
+    "description": "请先选择要采集的视频"
+  },
+  "text_c842d7f1539d": {
+    "message": "Open a video page to start capture",
+    "description": "请切换到视频网页后开启分段采集"
+  },
+  "text_924e20315bbd": {
+    "message": "Send from a media page",
+    "description": "请在素材网页发送"
+  },
+  "text_f0392be1ca56": {
+    "message": "Open the extension to grant access",
+    "description": "请打开插件授权"
+  },
+  "text_d31f431eae25": {
+    "message": "Open a video webpage first",
+    "description": "请打开需要采集视频的普通网页"
+  },
+  "text_141b203f34a4": {
+    "message": "Grant media access",
+    "description": "请授权素材来源"
+  },
+  "text_c72ad3f4aa4e": {
+    "message": "Couldn’t read the image",
+    "description": "读取图片失败"
+  },
+  "text_94bb837ba76e": {
+    "message": "Couldn’t read media",
+    "description": "读取媒体失败"
+  },
+  "text_5428a0f09442": {
+    "message": "No destination canvas",
+    "description": "还没有接收画布"
+  },
+  "text_ee9ebe523d42": {
+    "message": "Connecting…",
+    "description": "连接中…"
+  },
+  "text_a6eef90c991e": {
+    "message": "Choose media",
+    "description": "选取素材"
+  },
+  "text_c51f2a489e3e": {
+    "message": "Choose video",
+    "description": "选取视频"
+  },
+  "text_ecb5b8a5f780": {
+    "message": "Choose a video, then play it",
+    "description": "选取视频后播放"
+  },
+  "text_6ad3bfdfee35": {
+    "message": "Capturing",
+    "description": "采集中"
+  },
+  "text_3331a70d7dab": {
+    "message": "Capture stopped",
+    "description": "采集已停止"
+  },
+  "text_80fa0cad2578": {
+    "message": "Video timeline changed. Start capture again",
+    "description": "采集期间视频播放时间配置发生变化，暂不支持采集"
+  },
+  "text_2fb33a2d8473": {
+    "message": "Video format changed. Start capture again",
+    "description": "采集期间视频格式发生切换，请重新采集"
+  },
+  "text_f439bf8103f4": {
+    "message": "Capture limit reached. Try a shorter clip",
+    "description": "采集片段超过内存上限，请缩短播放时间后重试"
+  },
+  "text_0e275bcf37d5": {
+    "message": "Captured video data is invalid or too large",
+    "description": "采集的视频数据无效或过大，请重新采集"
+  },
+  "text_bf82096a066a": {
+    "message": "Captured video data is incomplete",
+    "description": "采集的视频片段数据不完整"
+  },
+  "text_4c4214426a4a": {
+    "message": "Invalid captured video data",
+    "description": "采集的视频片段数据无效"
+  },
+  "text_5ea495f6fed2": {
+    "message": "Invalid capture request",
+    "description": "采集请求来源无效"
+  },
+  "text_0db75b2001aa": {
+    "message": "Invalid capture connection. Refresh the page",
+    "description": "采集连接无效，请重新启用并刷新页面"
+  },
+  "text_da8c89375620": {
+    "message": "Capture access wasn’t granted",
+    "description": "采集连接未授权"
+  },
+  "text_025f7e94408a": {
+    "message": "Capture access wasn’t granted. Refresh the page",
+    "description": "采集连接未授权，请重新启用并刷新页面"
+  },
+  "text_2536dc0989e4": {
+    "message": "Capture connection timed out. Refresh the page",
+    "description": "采集连接超时，请重新启用并刷新页面"
+  },
+  "text_f5ba4bcdbcd5": {
+    "message": "Choose again",
+    "description": "重新选取"
+  },
+  "text_3b78f6bcca15": {
+    "message": "Couldn’t load the panel. Open it again",
+    "description": "面板加载失败，请重新打开"
+  },
+  "text_54e70c8bace4": {
+    "message": "(No audio)",
+    "description": "（无声）"
+  },
+  "text_b8d7ccf5e8c7": {
+    "message": "Preparing the panel",
+    "description": "正在准备面板"
+  },
+  "text_b12d905b9fcf": {
+    "message": "Send inspiration to your canvas.",
+    "description": "把灵感送往画布~"
+  },
+  "text_56ae3eedcb0e": {
+    "message": "Destination canvas",
+    "description": "接收画布"
+  },
+  "text_2cd0f3be8738": {
+    "message": "Clear",
+    "description": "取消"
+  },
+  "text_db8db0530432": {
+    "message": "Open",
+    "description": "查看"
+  },
+  "text_2ed019095ab4": {
+    "message": "Media",
+    "description": "素材传送"
+  },
+  "text_e3236869d04d": {
+    "message": "Auto-prepare video",
+    "description": "自动准备视频"
+  },
+  "text_7b561f17a5b5": {
+    "message": "About automatic video preparation",
+    "description": "了解自动准备视频"
+  },
+  "text_936ef35701ae": {
+    "message": "Prepares video clips locally. Refresh existing pages after enabling. Uploads only when you send.",
+    "description": "自动暂存网页视频片段。开启后，请刷新已打开的网页；发送时才上传。"
+  },
+  "text_5e8298006d05": {
+    "message": "Selected media preview",
+    "description": "所选素材预览"
+  },
+  "text_88cccf3b2a72": {
+    "message": "Selected media",
+    "description": "已选素材"
+  },
+  "text_df607294dbdd": {
+    "message": "Right-click to send",
+    "description": "右键素材，发送到画布"
+  },
+  "text_eeb7cae179b4": {
+    "message": "Images and videos",
+    "description": "图片、视频都支持"
+  },
+  "text_31a42eb9e6de": {
+    "message": "Allow and retry",
+    "description": "授权并重试"
+  },
+  "text_eea2fa7f2c7e": {
+    "message": "Manual video capture",
+    "description": "手动采集片段"
+  },
+  "text_7279a192ddf6": {
+    "message": "This refreshes the page. Save your work first.",
+    "description": "开启后会刷新网页，请先保存内容。"
+  },
+  "text_ee8c3ea9edd0": {
+    "message": "Start capture and refresh",
+    "description": "开启采集并刷新"
+  },
+  "text_6e784b3d0b1b": {
+    "message": "Stop capture",
+    "description": "停止采集"
+  },
+  "text_df3d58c7d84b": {
+    "message": "Settings",
+    "description": "设置"
+  },
+  "text_127527c89c51": {
+    "message": "Language / 语言",
+    "description": "语言 / Language"
+  },
+  "text_220e00eca1cb": {
+    "message": "Follow browser",
+    "description": "跟随浏览器"
+  },
+  "text_9937e365aaf3": {
+    "message": "简体中文",
+    "description": "简体中文"
+  },
+  "text_bd03c0aad701": {
+    "message": "Saved",
+    "description": "设置已保存"
+  },
+  "text_22800e64b52c": {
+    "message": "Couldn’t save. Try again",
+    "description": "无法保存设置，请重试"
+  },
+  "text_200e093b97fd": {
+    "message": "Chinese browser languages use Simplified Chinese. All others use English.",
+    "description": "中文浏览器使用简体中文，其他语言使用英文。"
+  },
+  "text_f2db3712a685": {
+    "message": "Changes save automatically.",
+    "description": "自动保存"
+  },
+  "text_d541e6d82a65": {
+    "message": "Forge Anywhere settings",
+    "description": "Forge Anywhere 设置"
+  },
+  "text_49ad779cbf96": {
+    "message": "Video clip data is incomplete",
+    "description": "视频片段数据不完整"
+  },
+  "text_a3a0ab16b1be": {
+    "message": "Video initialization data changed",
+    "description": "视频初始化片段发生变化"
+  },
+  "text_35bc9d55c213": {
+    "message": "Encrypted video isn’t supported",
+    "description": "暂不支持加密视频"
+  },
+  "text_4e7485ea80cb": {
+    "message": "Missing initialization data or non-contiguous video",
+    "description": "缺少初始化数据或视频片段不连续"
+  },
+  "text_cd1d5c3635c0": {
+    "message": "Can’t confirm video segment order",
+    "description": "无法确认视频片段顺序"
+  },
+  "text_a02e0480588c": {
+    "message": "Video segments aren’t contiguous. Start again",
+    "description": "视频片段不连续，请重新采集"
+  },
+  "text_b3bba8d65df4": {
+    "message": "Missing initialization data or video segments",
+    "description": "缺少初始化数据或可用的视频片段"
+  },
+  "text_e11833277f89": {
+    "message": "Unsupported number of video tracks",
+    "description": "视频轨道数量不受支持"
+  },
+  "text_1f676fec6a41": {
+    "message": "The captured clip is too large",
+    "description": "已采集的视频片段过大"
+  },
+  "text_875f2dc442ef": {
+    "message": "Invalid video clip data",
+    "description": "视频片段数据无效"
+  },
+  "text_681d84061ad5": {
+    "message": "Invalid clip timing",
+    "description": "视频片段时间配置无效"
+  },
+  "text_00a20ef7e346": {
+    "message": "The video clip is too long",
+    "description": "视频片段过长"
+  },
+  "text_26bbc50d25e4": {
+    "message": "Invalid video timestamps",
+    "description": "视频片段时间信息无效"
+  },
+  "text_37691e0730fa": {
+    "message": "The playback window creates a gap in the clip",
+    "description": "播放窗口造成片段不连续，无法安全组装"
+  },
+  "text_8a774a4a7e34": {
+    "message": "No usable keyframe in the playback window",
+    "description": "播放窗口内没有可用关键帧，无法组装视频片段"
+  },
+  "text_e3746ed1756c": {
+    "message": "Incomplete audio in the playback window",
+    "description": "播放窗口内没有完整音频数据，无法组装视频片段"
+  },
+  "text_c82e9ce7632b": {
+    "message": "No usable media tracks in the clip",
+    "description": "视频片段没有可用媒体轨道"
+  },
+  "text_943964a56316": {
+    "message": "Missing or unsupported media tracks",
+    "description": "音视频轨道不完整或存在多个轨道，无法安全组装"
+  },
+  "text_aeff27982e16": {
+    "message": "This video codec isn’t supported",
+    "description": "暂不支持此音视频编码"
+  },
+  "text_7167f14f8c33": {
+    "message": "Missing initialization data or a keyframe",
+    "description": "缺少初始化数据或关键帧，无法组装视频片段"
+  },
+  "text_139dd00a5888": {
+    "message": "Audio and video aren’t aligned. Start again",
+    "description": "音视频片段时间范围不一致，请重新采集"
+  },
+  "text_167083676948": {
+    "message": "The assembled clip is too large",
+    "description": "组装后的视频片段过大"
+  },
+  "text_e138bc539817": {
+    "message": "Start capture again and choose a video",
+    "description": "请重新启用采集并选择视频"
+  },
+  "text_85bb20a8b3db": {
+    "message": "Video selected",
+    "description": "已选中视频"
+  },
+  "text_94bc3d40defe": {
+    "message": "Access not granted",
+    "description": "未授权"
+  },
+  "text_d20d60925492": {
+    "message": "Preparing video",
+    "description": "正在准备视频"
+  },
+  "extensionDescription": {
+    "message": "Send inspiration to your canvas."
+  },
+  "openForge": {
+    "message": "Open Forge",
+    "description": "打开 Forge"
+  }
+}

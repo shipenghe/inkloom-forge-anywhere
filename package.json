@@ -1,0 +1,23 @@
+{
+  "name": "inkloom-forge-anywhere",
+  "version": "1.0.5",
+  "private": true,
+  "description": "Forge Anywhere — send inspiration to your canvas.",
+  "type": "module",
+  "scripts": {
+    "build:i18n": "node buildI18n.mjs",
+    "build:remux": "node buildMseRemux.mjs",
+    "build": "npm run build:i18n && npm run build:remux",
+    "test": "node --test *.test.mjs",
+    "package": "npm run build && node scripts/package.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "esbuild": "0.21.5",
+    "fflate": "0.8.3",
+    "mediabunny": "1.29.1",
+    "prettier": "2.8.8"
+  }
+}

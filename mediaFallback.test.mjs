@@ -1,0 +1,120 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
+import test from 'node:test'
+
+const sourceCode = await readFile(
+  new URL('./mediaFallback.js', import.meta.url),
+  'utf8'
+)
+
+function fixture({
+  current = 'https://i1.hdslb.com/a.jpg@120w.avif',
+  src = '//i1.hdslb.com/a.jpg',
+  width = 120,
+  dpr = 1,
+  sources = [],
+  matches = {},
+} = {}) {
+  const context = vm.createContext({
+    URL,
+    window: {
+      devicePixelRatio: dpr,
+      matchMedia: (query) => ({ matches: !!matches[query] }),
+    },
+  })
+  vm.runInContext(sourceCode, context)
+  const children = sources.map((attributes) => ({
+    tagName: 'SOURCE',
+    hasAttribute: (name) => attributes[name] !== undefined,
+    getAttribute: (name) => attributes[name] ?? null,
+  }))
+  const image = {
+    currentSrc: current,
+    src: new URL(src, 'https://t.bilibili.com/feed').href,
+    getAttribute: (name) => (name === 'src' ? src : null),
+    ownerDocument: { baseURI: 'https://t.bilibili.com/feed' },
+    parentElement: { tagName: 'PICTURE', children },
+    getBoundingClientRect: () => ({ width }),
+  }
+  return { select: () => context.__inkloomMediaFallback.imageUrl(image), image }
+}
+
+test('chooses the same Bilibili picture WebP source when AVIF was selected', () => {
+  const f = fixture({
+    sources: [
+      { type: 'image/avif', srcset: '//i1.hdslb.com/a.jpg@120w.avif' },
+      { type: 'image/webp', srcset: '//i1.hdslb.com/a.jpg@120w.webp' },
+    ],
+  })
+  assert.equal(f.select(), 'https://i1.hdslb.com/a.jpg@120w.webp')
+})
+
+test('resolves srcset and chooses a suitable width without mixing media conditions', () => {
+  const f = fixture({
+    current: 'https://t.bilibili.com/desktop.avif',
+    width: 200,
+    dpr: 2,
+    sources: [
+      {
+        type: 'image/avif',
+        media: '(min-width: 800px)',
+        srcset: '/desktop.avif',
+      },
+      {
+        type: 'image/webp',
+        media: '(min-width: 1000px)',
+        srcset: '/different.webp 800w',
+      },
+      {
+        type: 'image/webp',
+        media: '(min-width: 800px)',
+        srcset: '/small.webp 200w, /medium.webp 400w, /large.webp 800w',
+      },
+    ],
+    matches: { '(min-width: 800px)': true, '(min-width: 1000px)': true },
+  })
+  assert.equal(f.select(), 'https://t.bilibili.com/medium.webp')
+})
+
+test('uses declared image fallback if WebP source does not match or has invalid candidates', () => {
+  const f = fixture({
+    current: 'https://t.bilibili.com/a.avif',
+    src: '/a.jpg',
+    sources: [
+      { type: 'image/avif', srcset: '/a.avif' },
+      {
+        type: 'image/webp',
+        media: '(min-width: 800px)',
+        srcset: '/other.webp',
+      },
+      { type: 'image/webp', srcset: '/bad.webp 0w' },
+    ],
+  })
+  assert.equal(f.select(), 'https://t.bilibili.com/a.jpg')
+})
+
+test('does not guess a fallback when none is known to represent the selected image', () => {
+  const f = fixture({
+    current: 'https://t.bilibili.com/desktop.avif',
+    src: '/mobile.jpg',
+    sources: [
+      {
+        type: 'image/avif',
+        media: '(min-width: 800px)',
+        srcset: '/desktop.avif',
+      },
+      { type: 'image/webp', srcset: '/mobile.webp' },
+    ],
+    matches: { '(min-width: 800px)': true },
+  })
+  assert.equal(f.select(), 'https://t.bilibili.com/desktop.avif')
+})
+
+test('leaves ordinary images unchanged and does not invent AVIF alternatives', () => {
+  const ordinary = fixture({ current: 'https://i1.hdslb.com/image.webp' })
+  assert.equal(ordinary.select(), 'https://i1.hdslb.com/image.webp')
+  const outsidePicture = fixture({ current: 'https://i1.hdslb.com/image.avif' })
+  outsidePicture.image.parentElement = { tagName: 'DIV' }
+  assert.equal(outsidePicture.select(), 'https://i1.hdslb.com/image.avif')
+})
