@@ -29,13 +29,7 @@ const ids = [
   'select-media',
   'import-media',
   'authorize-video',
-  'prepare-video',
-  'stop-video',
   'capture-hint',
-  'video-options',
-  'video-description',
-  'video-state',
-  'video-summary-hint',
   'auto-video-toggle',
   'guide',
 ]
@@ -260,14 +254,13 @@ test('a target connection failure stays inside the receiving card', async () => 
   assert.equal(f.elements['set-target'].disabled, false)
 })
 
-test('automatic video preparation asks for all web origins only on explicit enable and can be disabled', async () => {
-  const f = fixture()
+test('automatic video preparation can restore access on explicit enable and can be disabled', async () => {
+  const f = fixture({ autoCaptureEnabled: false })
   await f.ready()
   assert.equal(
     f.elements['auto-video-toggle'].attributes['aria-checked'],
     'false'
   )
-  assert.equal(f.elements['video-options'].hidden, false)
   assert.equal(f.events.includes('PERMISSION'), false)
   assert.equal(f.events.includes('SET_AUTO_CAPTURE'), false)
   await f.click('auto-video-toggle')
@@ -286,7 +279,6 @@ test('automatic video preparation asks for all web origins only on explicit enab
     f.elements['auto-video-toggle'].attributes['aria-checked'],
     'true'
   )
-  assert.equal(f.elements['video-options'].hidden, true)
   assert.equal(
     f.elements['auto-video-toggle'].attributes['aria-checked'],
     'true'
@@ -298,7 +290,6 @@ test('automatic video preparation asks for all web origins only on explicit enab
     f.elements['auto-video-toggle'].attributes['aria-checked'],
     'false'
   )
-  assert.equal(f.elements['video-options'].hidden, false)
   assert.equal(
     f.elements['auto-video-toggle'].attributes['aria-checked'],
     'false'
@@ -311,7 +302,7 @@ test('automatic video preparation asks for all web origins only on explicit enab
 })
 
 test('automatic video preparation stays off if permission is denied or registration fails', async () => {
-  const denied = fixture()
+  const denied = fixture({ autoCaptureEnabled: false })
   denied.deny()
   await denied.ready()
   await denied.click('auto-video-toggle')
@@ -323,7 +314,7 @@ test('automatic video preparation stays off if permission is denied or registrat
   )
   assert.match(denied.elements['media-feedback'].textContent, /未授权/)
 
-  const failed = fixture()
+  const failed = fixture({ autoCaptureEnabled: false })
   failed.failAutoCapture('启用失败')
   await failed.ready()
   await failed.click('auto-video-toggle')
@@ -361,19 +352,14 @@ test('segmented capture makes the next step clear and keeps selection visible', 
   })
   await refreshing.ready()
   assert.equal(refreshing.elements['select-media'].disabled, true)
-  assert.match(refreshing.elements['video-state'].textContent, /刷新/)
+  assert.match(refreshing.elements['capture-hint'].textContent, /刷新/)
 
   const capturing = fixture({
     target: { title: '画布 A', tabId: 999 },
     mseCapture: { tabId: 123, phase: 'active' },
   })
   await capturing.ready()
-  assert.equal(capturing.elements['video-options'].open, true)
-  assert.equal(capturing.elements['video-description'].hidden, true)
-  assert.equal(
-    capturing.elements['video-state'].textContent,
-    '下一步：选取视频'
-  )
+  assert.equal(capturing.elements['capture-hint'].textContent, '选取视频后播放')
   assert.equal(capturing.elements['select-media'].textContent, '选取视频')
   assert.equal(capturing.elements['select-media'].disabled, false)
 
@@ -391,7 +377,6 @@ test('segmented capture makes the next step clear and keeps selection visible', 
   assert.equal(selected.elements['selection-panel'].hidden, false)
   assert.equal(selected.elements['import-media'].disabled, false)
   assert.equal(selected.elements['import-media'].textContent, '发送到画布')
-  assert.match(selected.elements['video-state'].textContent, /已选视频/)
 })
 
 test('selection from another tab is identified and video capture stays visible', async () => {
@@ -408,8 +393,6 @@ test('selection from another tab is identified and video capture stays visible',
   await f.ready()
   assert.match(f.elements['selection-detail'].textContent, /其他标签页/)
   assert.match(f.elements['selection-detail'].textContent, /视频片段/)
-  assert.equal(f.elements['video-options'].open, true)
-  assert.equal(f.elements['stop-video'].hidden, false)
 })
 
 test('video alternate permission requires a separate explicit click, then retries', async () => {
@@ -741,33 +724,6 @@ test('old or other-tab page notifications are not shown in the popup', async () 
   }
 })
 
-test('preparing segmented video requests only the current site, then refreshes it', async () => {
-  const f = fixture({ target: { title: 'Forge' } })
-  await f.ready()
-  await f.click('prepare-video')
-  await f.ready()
-  assert.deepEqual(Array.from(f.requested[0].origins), [
-    'https://example.test/*',
-  ])
-  assert.deepEqual(
-    f.events.filter((event) =>
-      ['PERMISSION', 'PREPARE_MSE', 'CLOSE'].includes(event)
-    ),
-    ['PERMISSION', 'PREPARE_MSE', 'CLOSE']
-  )
-  assert.equal(f.elements['stop-video'].hidden, false)
-})
-
-test('denying segmented video permission does not refresh the page', async () => {
-  const f = fixture({ target: { title: 'Forge' } })
-  await f.ready()
-  f.deny()
-  await f.click('prepare-video')
-  await f.ready()
-  assert.equal(f.events.includes('PREPARE_MSE'), false)
-  assert.match(f.elements['media-feedback'].textContent, /未授权/)
-})
-
 test('the existing card retains the latest sent clip and its original video timestamps', async () => {
   const f = fixture({
     target: { tabId: 99, title: '测试画布' },
@@ -885,4 +841,25 @@ test('an older pending refresh cannot replace a newer completed media status', a
   })
   await f.ready()
   assert.equal(f.elements['selection'].textContent, '发送完成 · 视频')
+})
+
+test('a fresh panel defaults to automatic preparation and never includes manual capture controls', async () => {
+  const f = fixture()
+  await f.ready()
+  assert.equal(
+    f.elements['auto-video-toggle'].attributes['aria-checked'],
+    'true'
+  )
+  assert.equal(f.events.includes('PERMISSION'), false)
+  const html = await readFile(new URL('./popup.html', import.meta.url), 'utf8')
+  assert.doesNotMatch(
+    html,
+    /id="(?:video-options|prepare-video|stop-video|video-description)"/
+  )
+  await f.click('auto-video-toggle')
+  await f.ready()
+  assert.equal(
+    f.elements['auto-video-toggle'].attributes['aria-checked'],
+    'false'
+  )
 })

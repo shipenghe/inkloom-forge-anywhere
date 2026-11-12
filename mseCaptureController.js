@@ -23,7 +23,7 @@
     return (await chrome.storage.session.get(STATE_KEY))[STATE_KEY] || null
   }
   async function autoEnabled() {
-    return !!(await chrome.storage.local.get(AUTO_FLAG))[AUTO_FLAG]
+    return (await chrome.storage.local.get(AUTO_FLAG))[AUTO_FLAG] !== false
   }
   async function getAutoSessions() {
     return (
@@ -147,12 +147,8 @@
       if (enabled) {
         if (!(await chrome.permissions.contains({ origins: AUTO_ORIGINS })))
           throw new Error('请先授权访问网页')
-        if (await autoEnabled()) {
-          await registerAuto()
-          return true
-        }
-        // Avoid two capture hooks in the same document.
-        await stopInternal()
+        // Keep existing automatic sessions; retire any legacy manual session.
+        if (!(await autoEnabled()) || (await getState())) await stopInternal()
         // Publish the flag before registration: otherwise a newly loaded page
         // can run the hook and be permanently rejected in the gap.
         await chrome.storage.local.set({ [AUTO_FLAG]: true })
@@ -446,9 +442,10 @@
       )
         await stopInternal()
       if (await autoEnabled()) {
-        if (await chrome.permissions.contains({ origins: AUTO_ORIGINS }))
+        if (await chrome.permissions.contains({ origins: AUTO_ORIGINS })) {
+          if (current) await stopInternal()
           await registerAuto()
-        else await disableAutoInternal()
+        } else await disableAutoInternal()
       } else {
         try {
           await unregisterAuto()

@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.5
+# Forge Anywhere · v1.0.6
 
 Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Extract `Forge-Anywhere-v1.0.5.zip`. Keep the extracted `Forge-Anywhere` folder on your computer.
+1. Extract `Forge-Anywhere-v1.0.6.zip`. Keep the extracted `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -24,7 +24,7 @@ The panel keeps the latest media preview and its selected, sending, sent, or fai
 
 ## Videos
 
-Turn on **Auto-prepare video** in the panel and grant website access. Refresh video pages that were already open. Then play normally and right-click to send. The extension first tries to obtain a full video file; for supported segmented players it can instead assemble a prepared clip.
+**Auto-prepare video** is on by default. Website access is declared at installation; you can turn preparation off in the panel, and that choice is remembered. Refresh video pages that were already open. Then play normally and right-click to send. The extension first tries to obtain a full video file; for supported segmented players it can instead assemble a prepared clip.
 
 **Clip 00:20–00:30** identifies the range on the original video's timeline. **No audio** indicates that the result has no audio track. A prepared clip may cover only part of the video. If a video is not ready, let it load and try again.
 
@@ -43,7 +43,7 @@ By default, Chinese browser languages—including Traditional Chinese—use Simp
 - Media filenames are `FA Image <timestamp>` or `FA Video <timestamp>`, with no extension.
 - The destination must stay open. After refreshing it, navigating away, or reloading the extension, check and set the destination again as needed.
 - Only supported image and video elements are detected. CSS backgrounds, canvas-rendered content and cross-origin embedded players are outside the current selection scope.
-- Turning off auto-prepare stops preparation but does not revoke previously granted website permissions. You can revoke those in browser extension settings.
+- Website access is declared at installation. Turning off auto-prepare stops preparation but does not revoke website permissions. You can revoke those in browser extension settings.
 - The canvas's existing format, size, account and upload restrictions still apply. Check the canvas before manually retrying an uncertain delivery to avoid duplicates.
 
 If something fails, report the page URL, the steps you took, and a screenshot of the message.
@@ -60,6 +60,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.5.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.6.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

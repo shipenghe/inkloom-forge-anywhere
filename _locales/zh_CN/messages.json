@@ -575,10 +575,6 @@
     "message": "视频尚未准备好",
     "description": "视频尚未准备好"
   },
-  "text_b49c226706c0": {
-    "message": "视频无法发送时使用",
-    "description": "视频无法发送时使用"
-  },
   "text_5cf0804656d1": {
     "message": "视频来源已变化",
     "description": "视频来源已变化"
@@ -850,22 +846,6 @@
   "text_31a42eb9e6de": {
     "message": "授权并重试",
     "description": "授权并重试"
-  },
-  "text_eea2fa7f2c7e": {
-    "message": "手动采集片段",
-    "description": "手动采集片段"
-  },
-  "text_7279a192ddf6": {
-    "message": "开启后会刷新网页，请先保存内容。",
-    "description": "开启后会刷新网页，请先保存内容。"
-  },
-  "text_ee8c3ea9edd0": {
-    "message": "开启采集并刷新",
-    "description": "开启采集并刷新"
-  },
-  "text_6e784b3d0b1b": {
-    "message": "停止采集",
-    "description": "停止采集"
   },
   "text_df3d58c7d84b": {
     "message": "设置",

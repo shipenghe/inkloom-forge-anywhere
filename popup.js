@@ -26,14 +26,8 @@ const viewButton = document.getElementById('view-target')
 const selectButton = document.getElementById('select-media')
 const importButton = document.getElementById('import-media')
 const authorizeVideoButton = document.getElementById('authorize-video')
-const prepareVideoButton = document.getElementById('prepare-video')
-const stopVideoButton = document.getElementById('stop-video')
 const captureHint = document.getElementById('capture-hint')
 const guide = document.getElementById('guide')
-const videoDescription = document.getElementById('video-description')
-const videoState = document.getElementById('video-state')
-const videoSummaryHint = document.getElementById('video-summary-hint')
-const videoOptions = document.getElementById('video-options')
 const autoVideoToggle = document.getElementById('auto-video-toggle')
 const popupShell = document.getElementById('popup-shell')
 const panelStyles = document.getElementById('panel-styles')
@@ -65,7 +59,6 @@ let permissionNeededKind = null
 let busy = false
 let remoteBusy = false
 let pollTimer = null
-let wasCapturingHere = false
 let feedback = { text: '', kind: 'info' }
 let targetFeedback = null
 let busyScope = null
@@ -343,18 +336,13 @@ selectionPreview.addEventListener('error', () => {
 function render() {
   const target = currentState?.target
   const disabled = busy || remoteBusy
-  const autoCaptureEnabled = currentState?.autoCaptureEnabled === true
-  document.documentElement?.style?.setProperty(
-    '--popup-height',
-    autoCaptureEnabled ? '394px' : '428px'
-  )
+  const autoCaptureEnabled = currentState?.autoCaptureEnabled !== false
+  document.documentElement?.style?.setProperty('--popup-height', '394px')
   autoVideoToggle.setAttribute('aria-checked', String(autoCaptureEnabled))
   autoVideoToggle.title = t(
     autoCaptureEnabled ? '关闭自动准备视频' : '开启自动准备视频'
   )
   autoVideoToggle.disabled = disabled
-  // The controller does not allow both modes to hook the same document.
-  videoOptions.hidden = autoCaptureEnabled
   const onTarget = !!target && target.tabId === currentTab?.id
   const canvasPage = isCanvasPage(currentTab?.url)
   const webPage = isWebPage(currentTab?.url)
@@ -418,24 +406,6 @@ function render() {
       !currentState.selection.needsVideoPermission)
   authorizeVideoButton.disabled = disabled || !target
   if (!authorizeVideoButton.hidden) importButton.hidden = true
-  if (capturingHere && !wasCapturingHere) videoOptions.open = true
-  wasCapturingHere = capturingHere
-  videoDescription.hidden = capturingHere
-  videoState.hidden = !capturingHere
-  videoState.textContent = t(
-    preparingHere
-      ? '正在刷新网页…'
-      : selectedVideoHere
-      ? '已选视频，播放后可发送'
-      : '下一步：选取视频'
-  )
-  videoSummaryHint.textContent = t(
-    capturingHere ? '采集中' : '视频无法发送时使用'
-  )
-  prepareVideoButton.hidden = capturingHere
-  prepareVideoButton.disabled = disabled || !target || !webPage || canvasPage
-  stopVideoButton.hidden = !capturingHere
-  stopVideoButton.disabled = disabled
   mediaCard.setAttribute(
     'aria-busy',
     String(remoteBusy || busyScope === 'media')
@@ -553,7 +523,7 @@ selectButton.addEventListener('click', () =>
 )
 autoVideoToggle.addEventListener('click', () => {
   action(async () => {
-    const enabled = !currentState?.autoCaptureEnabled
+    const enabled = currentState?.autoCaptureEnabled === false
     if (enabled) {
       // This must be called directly during the user's button gesture.
       const allowed = await chrome.permissions.request({
@@ -565,29 +535,6 @@ autoVideoToggle.addEventListener('click', () => {
     showStatus(enabled ? '已开启，请刷新素材网页' : '已关闭自动准备')
   }, 'auto')
 })
-prepareVideoButton.addEventListener('click', () => {
-  action(async () => {
-    const tab = currentTab
-    let url
-    try {
-      url = new URL(tab?.url)
-    } catch {}
-    if (!tab?.id || !url || !['http:', 'https:'].includes(url.protocol))
-      throw new Error('请打开需要采集视频的普通网页')
-    // Request synchronously from the user's explicit button gesture.
-    const origins = [`${url.protocol}//${url.hostname}/*`]
-    const allowed = await chrome.permissions.request({ origins })
-    if (!allowed) throw new Error('未授权访问当前网页')
-    await send({ kind: 'PREPARE_MSE', tabId: tab.id })
-    window.close()
-  })
-})
-stopVideoButton.addEventListener('click', () =>
-  action(async () => {
-    await send({ kind: 'STOP_MSE' })
-    showStatus('已停止采集')
-  })
-)
 importButton.addEventListener('click', () => {
   // The permission request must remain in the button's user gesture.
   action(async () => {

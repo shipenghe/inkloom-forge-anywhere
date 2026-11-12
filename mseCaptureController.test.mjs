@@ -8,9 +8,9 @@ const code = await readFile(
   'utf8'
 )
 
-async function fixture({ allowed = true } = {}) {
+async function fixture({ allowed = true, auto = false } = {}) {
   const state = {},
-    local = {},
+    local = auto === null ? {} : { autoCaptureEnabled: auto },
     scripts = [],
     calls = [],
     timers = []
@@ -489,4 +489,24 @@ test('revoking host permissions disables capture and clears sessions', async () 
   assert.equal(f.local.autoCaptureEnabled, false)
   assert.equal(f.scripts.length, 0)
   assert.equal(await f.api.getAutoCapture(7), null)
+})
+
+test('new installations prepare automatically while an explicit off preference stays off', async () => {
+  const fresh = await fixture({ auto: null })
+  assert.equal(await fresh.api.autoEnabled(), true)
+  await fresh.api.recover()
+  assert.equal(fresh.scripts.length, 2)
+  assert.equal(
+    fresh.calls.some((call) => call[0] === 'reload'),
+    false
+  )
+  assert.equal(await fresh.api.authorizeAuto(sender, autoNonce), true)
+  await fresh.api.setAutoEnabled(false)
+  await fresh.api.recover()
+  assert.equal(await fresh.api.autoEnabled(), false)
+  assert.equal(fresh.scripts.length, 0)
+  const denied = await fixture({ auto: null, allowed: false })
+  await denied.api.recover()
+  assert.equal(denied.scripts.length, 0)
+  assert.equal(await denied.api.autoEnabled(), false)
 })
