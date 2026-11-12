@@ -88,6 +88,6 @@ npm run package
 
 `npm run build` 生成本地语言资源和视频组装 bundle；`npm run package` 会先构建，再生成 `dist/Forge-Anywhere-v1.0.5.zip`。ZIP 内为 `Forge-Anywhere/` 文件夹，只包含运行所需文件及使用说明、第三方许可证，不包含测试、依赖目录或 Git 历史。`package.json` 的 `private` 仅用于避免意外发布到 npm，与 GitHub 仓库可见性无关。
 
-开发时可直接在 Chrome 中加载本仓库根目录。原 Inkloom 工作目录中的插件副本保留，避免影响当前已加载的扩展；后续代码维护以此仓库为准。改为从新目录加载时，浏览器可能分配新的扩展 ID，需要重新设置语言、网站权限和接收画布。
+本仓库是 Forge Anywhere 的唯一维护位置，Inkloom 中不再保留插件副本、兼容链接或配套接收代码。开发或本地安装时，在 Chrome 中加载本仓库根目录。由旧目录改为从新目录加载时，浏览器可能分配新的扩展 ID，需要重新设置语言、网站权限和接收画布。
 
 视频回归使用 `fixtures/remux-sample.mp4`，由测试画面和正弦波生成；普通测试无需 FFmpeg。可选再生成方式见 [fixtures/README.md](fixtures/README.md)。

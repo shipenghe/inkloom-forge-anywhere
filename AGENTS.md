@@ -2,6 +2,7 @@
 
 This is the standalone Forge Anywhere Chrome/Chromium Manifest V3 extension repository. Its root contains `manifest.json`; load this directory as an unpacked extension.
 
+- Maintain Forge Anywhere only in this repository. Do not restore plugin copies, compatibility symlinks, or custom receiver code in Inkloom.
 - Keep changes independent of Inkloom: do not import its source, assets, credentials, private registries, or Git history.
 - Install with `npm ci`; run `npm test`, `npm run build`, and `npm run package` as appropriate.
 - Source translations live in `_locales/en/messages.json` and `_locales/zh_CN/messages.json`. Use `npm run build:i18n` to generate the synchronous catalog and the Traditional Chinese alias.

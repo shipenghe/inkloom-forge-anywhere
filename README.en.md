@@ -51,7 +51,7 @@ If something fails, report the page URL, the steps you took, and a screenshot of
 
 ## Standalone development
 
-This repository is independent of Inkloom. Its root contains `manifest.json` and can be loaded as an unpacked extension. Node.js 20 or later is required.
+This is the sole maintenance repository for Forge Anywhere. Inkloom contains no plugin copy, compatibility symlink, or custom receiver code. Its root contains `manifest.json` and can be loaded as an unpacked extension. Node.js 20 or later is required.
 
 ```sh
 npm ci
