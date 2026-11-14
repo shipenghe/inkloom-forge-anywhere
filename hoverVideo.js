@@ -99,6 +99,75 @@
       element instanceof HTMLImageElement || element instanceof HTMLVideoElement
     )
   }
+  function opaqueBackdrop(style) {
+    const background = style.backgroundImage
+    let opacity = 0
+    if (background && background !== 'none') {
+      // Pexels covers each photo with a translucent gradient. Only accept
+      // computed gradients with explicit alpha colors; image URLs and unknown
+      // paint functions remain blockers rather than selecting through them.
+      const functions = [...background.matchAll(/([\w-]+)\(/g)].map(
+        (match) => match[1]
+      )
+      const gradients = functions.filter((name) =>
+        /^(?:repeating-)?(?:linear|radial|conic)-gradient$/.test(name)
+      ).length
+      const colors = [...background.matchAll(/rgba\([^()]*,\s*([\d.]+)\s*\)/g)]
+      if (
+        !gradients ||
+        !colors.length ||
+        functions.length !== gradients + colors.length
+      )
+        return true
+      const maxAlpha = Math.max(...colors.map((match) => Number(match[1])))
+      // Use the most opaque stop as a bound for every layer. Stacked gradients
+      // can hide an image even when each individual gradient is translucent.
+      opacity = 1 - (1 - maxAlpha) ** gradients
+    }
+    const color = style.backgroundColor
+    if (color && color !== 'transparent') {
+      const rgba = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)$/i)
+      if (rgba) opacity = 1 - (1 - opacity) * (1 - Number(rgba[1]))
+      else return true
+    }
+    return opacity >= 0.95
+  }
+  function resolveMedia(candidates, x, y) {
+    if (candidates.size === 1) return [...candidates][0]
+    if (candidates.size !== 2) return null
+    const video = [...candidates].find(
+      (node) => node instanceof HTMLVideoElement
+    )
+    const image = [...candidates].find(
+      (node) => node instanceof HTMLImageElement
+    )
+    // Video cards can retain their poster image beneath the playing preview.
+    // Require a decoded frame, the same parent and bounds, and an actual hit
+    // stack proving the video is painted above that image. Other overlaps are
+    // still ambiguous; DOM order alone cannot identify the requested media.
+    if (
+      !video ||
+      !image ||
+      video.parentElement !== image.parentElement ||
+      video.readyState < 2 ||
+      !video.videoWidth ||
+      !video.videoHeight ||
+      Number(getComputedStyle(video).opacity) !== 1
+    )
+      return null
+    const videoRect = video.getBoundingClientRect()
+    const imageRect = image.getBoundingClientRect()
+    if (
+      ['left', 'top', 'right', 'bottom'].some(
+        (edge) => Math.abs(videoRect[edge] - imageRect[edge]) > 1
+      )
+    )
+      return null
+    const root = video.getRootNode?.() || document
+    const stack = root.elementsFromPoint?.(x, y) || []
+    const videoIndex = stack.indexOf(video)
+    return videoIndex >= 0 && stack.indexOf(image) > videoIndex ? video : null
+  }
   function findMedia(event) {
     const { clientX: x, clientY: y } = event
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null
@@ -119,13 +188,7 @@
         layer = layer.parentElement
       ) {
         if (layer.contains(media)) continue
-        const computed = getComputedStyle(layer)
-        if (computed.backgroundImage && computed.backgroundImage !== 'none')
-          return true
-        const color = computed.backgroundColor
-        if (!color || color === 'transparent') continue
-        const rgba = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)$/i)
-        if (rgba ? Number(rgba[1]) >= 0.95 : /^rgb\(/i.test(color)) return true
+        if (opaqueBackdrop(getComputedStyle(layer))) return true
       }
       return false
     }
@@ -135,12 +198,15 @@
       const rect = scope.getBoundingClientRect()
       // Never scan a feed-sized ancestor on every pointer movement.
       if (rect.width * rect.height > innerWidth * innerHeight * 4) break
-      if (candidates.size === 1) {
+      if (candidates.size) {
         const found = [...candidates][0].getBoundingClientRect()
         if (rect.width * rect.height > found.width * found.height * 4) break
       }
       for (const item of scope.querySelectorAll('img, video')) {
         if (!isMedia(item) || !visibleAt(item, x, y)) continue
+        // Unstarted previews can leave an empty video element over the cover.
+        if (item instanceof HTMLVideoElement && !(item.currentSrc || item.src))
+          continue
         if (dialog && !dialog.contains(item)) continue
         if (blockedByOpaqueLayer(item, scope)) continue
         const bounds = item.getBoundingClientRect()
@@ -148,11 +214,11 @@
         if (rect.width * rect.height > bounds.width * bounds.height * 4)
           continue
         candidates.add(item)
-        if (candidates.size > 1) return null
+        if (candidates.size > 2) return null
       }
       scope = scope.parentElement
     }
-    return candidates.size === 1 ? [...candidates][0] : null
+    return resolveMedia(candidates, x, y)
   }
 
   function hide() {

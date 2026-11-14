@@ -336,7 +336,7 @@ async function sendTarget(target, type, requestId, extra = {}) {
     response = await chrome.tabs.sendMessage(
       target.tabId,
       {
-        kind: 'INKLOOM_DROP_REQUEST',
+        kind: 'FORGE_DROP_REQUEST_V2',
         payload: {
           channel: CHANNEL,
           from: 'extension',
@@ -356,6 +356,15 @@ async function sendTarget(target, type, requestId, extra = {}) {
         : '接收画布已关闭或发生变化，请重新设置'
     )
   }
+  if (
+    response &&
+    response.bridgeVersion !== chrome.runtime.getManifest().version
+  )
+    throw new Error(
+      type === 'END'
+        ? '结果未知，先检查画布'
+        : '无法连接画布，请刷新画布后重新设置'
+    )
   if (!response?.ok) {
     const messages = {
       CANVAS_CHANGED: '接收画布已切换，请重新设置',

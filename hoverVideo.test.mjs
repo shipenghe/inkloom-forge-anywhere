@@ -206,6 +206,163 @@ test('does not select a video underneath an unrelated opaque overlay', async () 
   )
 })
 
+test('recognizes the Pexels photo beneath its gradient overlay and keeps the site menu', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.card=new Element('a');globalThis.image=new HTMLImageElement();globalThis.overlay=new Element();
+    overlay.style.backgroundImage='linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.3))';
+    overlay.style.backgroundColor='rgba(0, 0, 0, 0)';
+    card.append(image,overlay);document.body.append(card)
+  `)
+  const event = f.ctx.eventFor(f.ctx.overlay)
+  event.preventDefault = () => assert.fail('must keep the Pexels menu')
+  event.stopPropagation = () =>
+    assert.fail('must allow the site context handler')
+  await f.ctx.listeners.contextmenu(event)
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  assert.equal(f.ctx.created[2].attrs['aria-label'], '发送图片到画布')
+  assert.equal(
+    f.ctx.sent.filter((m) => m.kind === 'HOVER_MEDIA_SEND').length,
+    0
+  )
+  await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+  const sent = f.ctx.sent.find((m) => m.kind === 'HOVER_MEDIA_SEND')
+  assert.equal(sent.url, f.ctx.image.currentSrc)
+  assert.equal(f.ctx.__inkloomSelectedImage, f.ctx.image)
+  f.ctx.messageListener(
+    { kind: 'HOVER_MEDIA_STOP' },
+    { id: 'test-id' },
+    () => {}
+  )
+})
+
+test('Pexels preview above its poster shows a video entry and sends the video, not the cover', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.card=new Element('a');globalThis.image=new HTMLImageElement();globalThis.video=new HTMLVideoElement('https://videos.pexels.com/preview.mp4');globalThis.overlay=new Element();
+    video.readyState=4;video.videoWidth=360;video.videoHeight=640;
+    overlay.style.backgroundImage='linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.3))';
+    card.append(image,video,overlay);document.body.append(card);
+    document.elementsFromPoint=()=>[overlay,video,image,card]
+  `)
+  const event = f.ctx.eventFor(f.ctx.overlay)
+  event.preventDefault = () => assert.fail('must keep the site context menu')
+  event.stopPropagation = () =>
+    assert.fail('must allow the site context handler')
+  await f.ctx.listeners.contextmenu(event)
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  assert.equal(f.ctx.created[2].attrs['aria-label'], '发送视频到画布')
+  assert.equal(
+    f.ctx.sent.filter((m) => m.kind === 'HOVER_MEDIA_SEND').length,
+    0
+  )
+  await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+  const sent = f.ctx.sent.find((m) => m.kind === 'HOVER_MEDIA_SEND')
+  assert.equal(sent.mediaKind, 'video')
+  assert.equal(sent.url, 'https://videos.pexels.com/preview.mp4')
+  assert.equal(sent.displayUrl, undefined)
+  f.ctx.messageListener(
+    { kind: 'HOVER_MEDIA_STOP' },
+    { id: 'test-id' },
+    () => {}
+  )
+})
+
+test('poster pairing never selects an unloaded, covered, translucent or unrelated video', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.card=new Element('a');globalThis.image=new HTMLImageElement();globalThis.video=new HTMLVideoElement();globalThis.overlay=new Element();
+    card.append(image,video,overlay);document.body.append(card);
+    globalThis.stack=[overlay,video,image,card];document.elementsFromPoint=()=>stack;
+    video.videoWidth=640;video.videoHeight=360;video.readyState=0
+  `)
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.run('video.readyState=4;stack=[overlay,image,video,card]')
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.run('stack=[overlay,video,image,card];video.style.opacity="0.5"')
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.run(
+    'video.style.opacity="1";video.rect={...video.rect,right:450,width:350}'
+  )
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.run(
+    'video.rect={...image.rect};globalThis.second=new HTMLVideoElement();card.append(second)'
+  )
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.run('second.style.display="none";video.style.opacity="0"')
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  assert.equal(
+    f.ctx.created[2].attrs['aria-label'],
+    '发送图片到画布',
+    'an inactive video leaves the visible poster as an image'
+  )
+  f.run(
+    'video.style.opacity="1";video.currentSrc="";video.src="";video.readyState=0'
+  )
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  assert.equal(
+    f.ctx.created[2].attrs['aria-label'],
+    '发送图片到画布',
+    'an empty video placeholder does not hide the image entry'
+  )
+  f.ctx.messageListener(
+    { kind: 'HOVER_MEDIA_STOP' },
+    { id: 'test-id' },
+    () => {}
+  )
+})
+
+test('gradients never bypass opaque backgrounds, image layers, or ambiguous media', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.card=new Element('a');globalThis.image=new HTMLImageElement();globalThis.overlay=new Element();
+    card.append(image,overlay);document.body.append(card)
+  `)
+  for (const [backgroundImage, backgroundColor] of [
+    ['linear-gradient(rgb(0, 0, 0), rgba(0, 0, 0, 0))', 'transparent'],
+    ['linear-gradient(rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0))', 'transparent'],
+    ['url("https://image.example/cover.png")', 'transparent'],
+    [
+      'linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)), url("https://image.example/cover.png")',
+      'transparent',
+    ],
+    [
+      'linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3))',
+      'rgb(255, 255, 255)',
+    ],
+    [
+      'linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9))',
+      'rgba(0, 0, 0, 0.9)',
+    ],
+    [
+      'linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9))',
+      'transparent',
+    ],
+  ]) {
+    Object.assign(f.ctx.overlay.style, { backgroundImage, backgroundColor })
+    await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+    assert.equal(f.ctx.created[0].style.display, 'none', backgroundImage)
+  }
+  f.run(`
+    overlay.style.backgroundImage='linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3))';
+    globalThis.video=new HTMLVideoElement();card.append(video)
+  `)
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.overlay))
+  assert.equal(f.ctx.created[0].style.display, 'none')
+  f.ctx.messageListener(
+    { kind: 'HOVER_MEDIA_STOP' },
+    { id: 'test-id' },
+    () => {}
+  )
+})
+
 test('without a target the right-click entry opens Forge without sending media', async () => {
   const f = await fixture({ hasTarget: false })
   f.run(`globalThis.video=new HTMLVideoElement();document.body.append(video)`)

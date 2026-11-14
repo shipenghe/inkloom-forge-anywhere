@@ -1,14 +1,16 @@
-# Forge Anywhere · v1.0.6
+# Forge Anywhere · v1.0.11
 
 Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Extract `Forge-Anywhere-v1.0.6.zip`. Keep the extracted `Forge-Anywhere` folder on your computer.
+1. Extract `Forge-Anywhere-v1.0.11.zip`. Keep the extracted `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
 To update, replace the files in your existing extension folder with the new package, then click **Reload** on the extension management page. Refresh media pages and set your destination canvas again. The extension is installed locally and is not currently listed in the Chrome Web Store.
+
+Setting the destination again checks and updates the canvas connection script. Old connections cannot handle new-version imports. Updating does not rearrange existing nodes; pan to an empty area before the first import to start a new row layout there.
 
 ## Send media
 
@@ -18,9 +20,17 @@ To update, replace the files in your existing extension folder with the new pack
 
 The Forge logo in the panel opens the [Forge homepage](https://forge.art/). Without a destination, the media context menu and the icon shown after right-clicking open Forge instead. Set a destination to send media; earlier clicks are not automatically replayed.
 
-If no entry appears, open the extension once on the media page, or use **Choose media** in its panel. A video thumbnail is an image; open the playback page to send the video.
+If no entry appears, open the extension once on the media page, or use **Choose media** in its panel. An unplayed video thumbnail is treated as an image. Start the preview before right-clicking the card to send video. List previews may have lower resolution than the video on its playback page; open that page for higher quality or when the preview cannot be selected.
+
+Translucent gradient overlays, including those on Pexels photos and video previews, are supported. Right-clicking keeps the site's own menu and shows the Forge icon. A decoded video preview over its cover is selected as video only when the hit stack confirms it is above that cover. Opaque covers and ambiguous overlaps are left unselected.
 
 The panel keeps the latest media preview and its selected, sending, sent, or failed state in one card. **Sent** means the file was handed to the canvas and handling was detected. Uploading and saving still depend on the canvas; check its result before retrying.
+
+## Placement
+
+Consecutive imports fill rows of 10 images or videos. The 11th starts a new row. The first import starts at the current viewport center. Each row is top-aligned, with an 80-unit gap after each node's display width. New rows return to the starting horizontal position and begin 80 units below the tallest node in the previous row, including its title. Bounds follow the canvas's current equal-area preview sizing and maximum-side limit; unreadable dimensions reserve the maximum bounds. Panning and zooming preserve the row layout's canvas positions. Setting the destination again starts a new layout.
+
+The rows can overlap existing nodes or extend beyond the visible viewport. Zoom out or pan to see the whole row. Transfers rejected before handoff do not consume a position. An uncertain handoff keeps its position reserved in case the upload completes later.
 
 ## Videos
 
@@ -60,6 +70,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.6.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.11.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

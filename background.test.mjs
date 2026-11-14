@@ -31,6 +31,7 @@ function fixture(mime = 'image/png', controller) {
   let blobFailure = null
   let responseOverride = null
   let canvasName = null
+  let bridgeVersion = '1.0.11'
   let previewResponse = { ok: true }
   const previewCalls = []
   const activityStates = []
@@ -60,6 +61,7 @@ function fixture(mime = 'image/png', controller) {
   const chrome = {
     runtime: {
       id: 'test-id',
+      getManifest: () => ({ version: '1.0.11' }),
       getURL: (path) => `chrome-extension://test-id/${path}`,
       onMessage: {
         addListener(fn) {
@@ -150,7 +152,7 @@ function fixture(mime = 'image/png', controller) {
             ? previewResponse()
             : previewResponse
         }
-        if (tabId === 1 && message.kind === 'INKLOOM_DROP_REQUEST') {
+        if (tabId === 1 && message.kind === 'FORGE_DROP_REQUEST_V2') {
           if (options?.documentId !== documentId)
             throw new Error('document changed')
           const p = message.payload
@@ -159,7 +161,19 @@ function fixture(mime = 'image/png', controller) {
             throw new Error('message port closed')
           if (p.type === 'END' && endResponseFailure === 'empty') return null
           if (p.type === 'END' && endResponseFailure === 'wrong-canvas')
-            return { ok: true, delivered: true, canvasId: 'another-canvas' }
+            return {
+              ok: true,
+              bridgeVersion,
+              delivered: true,
+              canvasId: 'another-canvas',
+            }
+          if (p.type === 'END' && endResponseFailure === 'old-bridge')
+            return {
+              ok: true,
+              bridgeVersion: '1.0.8',
+              delivered: true,
+              canvasId: targetCanvas,
+            }
           if (p.type === 'ARM') activeSession = p.sessionId
           if (p.type === 'DISARM') activeSession = null
           if (p.type === 'CHUNK')
@@ -168,9 +182,15 @@ function fixture(mime = 'image/png', controller) {
               Buffer.from(p.data, 'base64'),
             ])
           return p.type === 'END' && dropFailure
-            ? { canvasId: targetCanvas, ok: false, error: dropFailure }
+            ? {
+                canvasId: targetCanvas,
+                bridgeVersion,
+                ok: false,
+                error: dropFailure,
+              }
             : {
                 canvasId: targetCanvas,
+                bridgeVersion,
                 ...(p.type === 'PING' && canvasName ? { canvasName } : {}),
                 ...(p.type === 'END' && !missingAcknowledgement
                   ? { delivered: true }
@@ -417,6 +437,9 @@ function fixture(mime = 'image/png', controller) {
     },
     setCanvasName: (value) => {
       canvasName = value
+    },
+    setBridgeVersion: (value) => {
+      bridgeVersion = value
     },
     setMseClipAudio: (value) => {
       mseClipAudio = value
@@ -1620,7 +1643,7 @@ test('does not report delivery when the drop bridge omits its acknowledgement', 
   assert.equal(f.storage.lastDelivery, previous)
 })
 
-for (const failure of ['disconnect', 'empty', 'wrong-canvas']) {
+for (const failure of ['disconnect', 'empty', 'wrong-canvas', 'old-bridge']) {
   test(`an uncertain ${failure} response does not claim delivery or resend`, async () => {
     const f = fixture()
     f.grantExisting()
@@ -1699,6 +1722,45 @@ test('binds requests to the exact injected top-level canvas document', async () 
   const result = await f.send({ kind: 'START_PICKER', tabId: 2 })
   assert.equal(result.ok, false)
   assert.match(result.error, /画布已关闭或发生变化/)
+})
+
+test('missing or old bridge versions cannot be bound as a destination', async () => {
+  for (const version of [undefined, '1.0.8']) {
+    const f = fixture()
+    f.setBridgeVersion(version)
+    const result = await f.send({ kind: 'SET_TARGET', tabId: 1 })
+    assert.equal(result.ok, false)
+    assert.equal(result.error, '无法连接画布，请刷新画布后重新设置')
+    assert.equal(f.storage.target, null)
+    assert.equal(
+      f.calls.some((call) => call.type === 'ARM' || call.type === 'BEGIN'),
+      false
+    )
+  }
+})
+
+test('a destination that reports an older bridge is invalidated before fetching or dropping media', async () => {
+  const f = fixture()
+  await f.send({ kind: 'SET_TARGET', tabId: 1 })
+  await f.send({ kind: 'START_PICKER', tabId: 2 })
+  await f.send(
+    {
+      kind: 'MEDIA_SELECTED',
+      url: 'https://cdn.example.com/photo.png',
+      mediaKind: 'image',
+    },
+    { id: 'test-id', tab: { id: 2 } }
+  )
+  f.setBridgeVersion('1.0.8')
+  const result = await f.send({ kind: 'IMPORT' })
+  assert.equal(result.ok, false)
+  assert.equal(result.error, '无法连接画布，请刷新画布后重新设置')
+  assert.equal(f.storage.target, null)
+  assert.equal(f.fetchUrls.length, 0)
+  assert.equal(
+    f.calls.some((call) => call.type === 'BEGIN'),
+    false
+  )
 })
 
 test('selected preview reads only the pinned source without fetching or mutating selection', async () => {

@@ -2,15 +2,26 @@
 // inside the extension's isolated world; the page receives only a normal drop.
 ;(async () => {
   if (globalThis.ForgeI18n) await globalThis.ForgeI18n.ready
-  if (globalThis.__inkloomDropBridge) return
-  globalThis.__inkloomDropBridge = true
+  const bridgeVersion = chrome.runtime.getManifest().version
+  if (globalThis.__forgeDropBridge?.version === bridgeVersion) return
+  globalThis.__forgeDropBridge?.stop()
+  // Legacy bridges expose only a boolean and cannot remove their listener.
+  // A new request kind keeps those listeners from answering new transfers.
+  const REQUEST_KIND = 'FORGE_DROP_REQUEST_V2'
   const CHANNEL = 'inkloom-media-import-v1'
   const MAX_SIZE = 200 * 1024 * 1024
   const MAX_ENCODED_CHUNK_LENGTH = 1024 * 1024
   const TIMEOUT = 120_000
+  const GRID_COLUMNS = 10
+  const MEDIA_CONTENT_AREA = 129_600
+  const MEDIA_MAX_SIDE = 560
+  const NODE_HEADER_HEIGHT = 28
+  const GRID_GAP = 80
   let sessionId = null
   let transfer = null
   let pendingWatcher = null
+  let grid = null
+  let stopped = false
 
   function currentCanvasId() {
     const match = location.pathname.match(/^\/detail\/([^/]+)\/?$/)
@@ -65,9 +76,28 @@
     if (rect.width < 20 || rect.height < 20) return null
     const style = getComputedStyle(flow)
     if (style.display === 'none' || style.visibility !== 'visible') return null
-    // Check the actual topmost element to avoid dropping behind a modal,
-    // another overlay, an interactive toolbar or a node. Background tabs can
-    // still have a valid layout; document.visibilityState is not a blocker.
+    const viewport = flow.querySelector('.react-flow__viewport')
+    if (!viewport) return null
+    let transform
+    try {
+      transform = new DOMMatrixReadOnly(getComputedStyle(viewport).transform)
+      if (
+        !transform.is2D ||
+        ![transform.a, transform.d, transform.e, transform.f].every(
+          Number.isFinite
+        ) ||
+        transform.a <= 0 ||
+        transform.a !== transform.d ||
+        transform.b !== 0 ||
+        transform.c !== 0
+      )
+        return null
+    } catch {
+      return null
+    }
+    // Probe readiness, not empty space: the drop targets the canvas root even
+    // when a node occupies this point. Keep modal/toolbar checks independent of
+    // the sequential rows, which can continue outside the visible viewport.
     for (const fy of [0.5, 0.3, 0.7, 0.2, 0.8]) {
       for (const fx of [0.5, 0.3, 0.7, 0.2, 0.8]) {
         const x = rect.left + rect.width * fx
@@ -76,18 +106,70 @@
         if (!hit || !flow.contains(hit)) continue
         if (
           hit.closest(
-            '.react-flow__node, .react-flow__panel, button, input, textarea, select, [contenteditable="true"], [role="dialog"]'
+            '.react-flow__panel, button, input, textarea, select, [contenteditable="true"], [role="dialog"]'
           )
         )
           continue
-        return { root, flow, x, y }
+        return { root, flow, rect, transform }
       }
     }
     return null
   }
 
+  function nextPlacement(canvas) {
+    const { rect, transform } = canvas
+    const layout = grid || {
+      x: (rect.width / 2 - transform.e) / transform.a,
+      y: (rect.height / 2 - transform.f) / transform.a,
+      count: 0,
+      rowWidths: [],
+      rowHeights: [],
+    }
+    const row = Math.floor(layout.count / GRID_COLUMNS)
+    const previousRowsHeight = layout.rowHeights
+      .slice(0, row)
+      .reduce((sum, height) => sum + height + GRID_GAP, 0)
+    return {
+      layout,
+      row,
+      x: Math.round(
+        rect.left +
+          transform.e +
+          (layout.x + (layout.rowWidths[row] || 0)) * transform.a
+      ),
+      y: Math.round(
+        rect.top + transform.f + (layout.y + previousRowsHeight) * transform.a
+      ),
+    }
+  }
+
+  function reservePlacement(placement) {
+    grid = placement.layout
+    grid.count++
+    grid.rowWidths[placement.row] ||= 0
+    grid.rowHeights[placement.row] ||= 0
+  }
+
+  function mediaNodeBounds(width, height) {
+    // Canvas previews have a constant content area, capped on the long side.
+    // Intrinsic pixels and the former 320-wide estimate are not node bounds.
+    if (!width || !height)
+      return {
+        width: MEDIA_MAX_SIDE,
+        height: MEDIA_MAX_SIDE + NODE_HEADER_HEIGHT,
+      }
+    const scale = Math.min(
+      Math.sqrt(MEDIA_CONTENT_AREA / (width * height)),
+      MEDIA_MAX_SIDE / Math.max(width, height)
+    )
+    return {
+      width: Math.ceil(width * scale),
+      height: Math.ceil(height * scale) + NODE_HEADER_HEIGHT,
+    }
+  }
+
   function reply(ok, error, extra) {
-    return { ok, ...(error ? { error } : {}), ...extra }
+    return { ok, bridgeVersion, ...(error ? { error } : {}), ...extra }
   }
 
   // A small, local-only preview of the file already being handed off. This is
@@ -99,6 +181,20 @@
       let media
       let timer
       let done = false
+      let dimensions = {}
+      const readDimensions = () => {
+        const width =
+          media.tagName === 'VIDEO' ? media.videoWidth : media.naturalWidth
+        const height =
+          media.tagName === 'VIDEO' ? media.videoHeight : media.naturalHeight
+        if (
+          Number.isFinite(width) &&
+          Number.isFinite(height) &&
+          width > 0 &&
+          height > 0
+        )
+          dimensions = { width, height }
+      }
       const finish = (preview) => {
         if (done) return
         done = true
@@ -106,6 +202,7 @@
         try {
           if (media) {
             media.onload = null
+            media.onloadedmetadata = null
             media.onloadeddata = null
             media.onerror = null
             if (media.tagName === 'VIDEO') {
@@ -117,7 +214,10 @@
         try {
           if (objectUrl) URL.revokeObjectURL(objectUrl)
         } catch {}
-        resolve(preview || null)
+        resolve({
+          ...dimensions,
+          ...(preview ? { previewDataUrl: preview } : {}),
+        })
       }
       try {
         const isVideo = file.type.startsWith('video/')
@@ -125,11 +225,12 @@
         if (isVideo) {
           media.preload = 'auto'
           media.muted = true
+          media.onloadedmetadata = readDimensions
         }
         const loaded = () => {
           try {
-            const width = isVideo ? media.videoWidth : media.naturalWidth
-            const height = isVideo ? media.videoHeight : media.naturalHeight
+            readDimensions()
+            const { width, height } = dimensions
             if (!width || !height) return finish(null)
             const scale = Math.min(1, 144 / Math.max(width, height))
             const canvas = document.createElement('canvas')
@@ -208,7 +309,9 @@
     if (!canvasId || message.canvasId !== canvasId) {
       clearTransfer()
       pendingWatcher?.cancel()
+      pendingWatcher = null
       sessionId = null
+      grid = null
       return reply(false, 'CANVAS_CHANGED')
     }
     if (message.type === 'PING') {
@@ -229,7 +332,9 @@
         return reply(false, 'INVALID_SESSION')
       clearTransfer()
       pendingWatcher?.cancel()
+      pendingWatcher = null
       sessionId = message.sessionId
+      grid = null
       return reply(true, null, { canvasId })
     }
     if (!sessionId || message.sessionId !== sessionId)
@@ -237,7 +342,9 @@
     if (message.type === 'DISARM') {
       clearTransfer()
       pendingWatcher?.cancel()
+      pendingWatcher = null
       sessionId = null
+      grid = null
       return reply(true, null, { canvasId })
     }
     if (message.type === 'BEGIN') {
@@ -320,12 +427,13 @@
         pendingWatcher = watcher
         const dataTransfer = new DataTransfer()
         dataTransfer.items.add(file)
+        const placement = nextPlacement(canvas)
         const init = {
           bubbles: true,
           cancelable: true,
           composed: true,
-          clientX: canvas.x,
-          clientY: canvas.y,
+          clientX: placement.x,
+          clientY: placement.y,
           dataTransfer,
         }
         const dragOver = new DragEvent('dragover', init)
@@ -342,17 +450,30 @@
           pendingWatcher = null
           return reply(false, 'DROP_UNAVAILABLE')
         }
+        // Reserve immediately, including when handling cannot be confirmed.
+        // A delayed upload must not share its position with the next file.
+        reservePlacement(placement)
+        const inspection = previewFile(file)
         watcher.check()
-        return watcher.promise.then(async (handled) => {
-          if (pendingWatcher === watcher) pendingWatcher = null
-          if (!handled) return reply(false, 'UNKNOWN_DELIVERY')
-          const previewDataUrl = await previewFile(file)
-          return reply(true, null, {
-            canvasId,
-            delivered: true,
-            ...(previewDataUrl ? { previewDataUrl } : {}),
+        return watcher.promise
+          .then(async (handled) => {
+            const { width, height, previewDataUrl } = await inspection
+            const bounds = mediaNodeBounds(width, height)
+            placement.layout.rowWidths[placement.row] += bounds.width + GRID_GAP
+            placement.layout.rowHeights[placement.row] = Math.max(
+              placement.layout.rowHeights[placement.row],
+              bounds.height
+            )
+            if (!handled) return reply(false, 'UNKNOWN_DELIVERY')
+            return reply(true, null, {
+              canvasId,
+              delivered: true,
+              ...(previewDataUrl ? { previewDataUrl } : {}),
+            })
           })
-        })
+          .finally(() => {
+            if (pendingWatcher === watcher) pendingWatcher = null
+          })
       } catch {
         watcher?.cancel()
         if (pendingWatcher === watcher) pendingWatcher = null
@@ -363,8 +484,8 @@
     return reply(false, 'UNKNOWN_MESSAGE')
   }
 
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request?.kind !== 'INKLOOM_DROP_REQUEST') return
+  function onMessage(request, sender, sendResponse) {
+    if (stopped || request?.kind !== REQUEST_KIND) return
     const payload = request.payload
     if (
       sender?.id !== chrome.runtime.id ||
@@ -391,5 +512,18 @@
       clearTransfer()
       sendResponse(reply(false, 'CANVAS_NOT_READY'))
     }
-  })
+  }
+  function stop() {
+    stopped = true
+    clearTransfer()
+    pendingWatcher?.cancel()
+    pendingWatcher = null
+    sessionId = null
+    grid = null
+    chrome.runtime.onMessage.removeListener(onMessage)
+    if (globalThis.__forgeDropBridge?.stop === stop)
+      delete globalThis.__forgeDropBridge
+  }
+  chrome.runtime.onMessage.addListener(onMessage)
+  globalThis.__forgeDropBridge = { version: bridgeVersion, stop }
 })()
