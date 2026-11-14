@@ -795,9 +795,9 @@
     "message": "Preparing the panel",
     "description": "正在准备面板"
   },
-  "text_b12d905b9fcf": {
-    "message": "Send inspiration to your canvas.",
-    "description": "把灵感送往画布~"
+  "downloadOnGitHub": {
+    "message": "Download on GitHub",
+    "description": "Link to the latest GitHub release"
   },
   "text_56ae3eedcb0e": {
     "message": "Destination canvas",

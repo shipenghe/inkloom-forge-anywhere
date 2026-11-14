@@ -795,9 +795,9 @@
     "message": "正在准备面板",
     "description": "正在准备面板"
   },
-  "text_b12d905b9fcf": {
-    "message": "把灵感送往画布~",
-    "description": "把灵感送往画布~"
+  "downloadOnGitHub": {
+    "message": "GitHub 下载",
+    "description": "GitHub 最新版下载页的链接"
   },
   "text_56ae3eedcb0e": {
     "message": "接收画布",
