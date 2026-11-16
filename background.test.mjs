@@ -352,7 +352,11 @@ function fixture(mime = 'image/png', controller) {
     Blob,
     Response,
     Uint8Array,
-    checkForgeRelease: async () => ({ version: '1.0.15', available: true }),
+    checkForgeRelease: async (recheck) => ({
+      version: '1.0.15',
+      available: true,
+      recheck,
+    }),
     inkloomMseController: controller,
     __inkloomMseRemux: {
       async remuxCapturedVideo() {
@@ -480,12 +484,14 @@ test('release checks are available to the popup and settings, including settings
   const message = { kind: 'CHECK_EXTENSION_UPDATE' }
   const popup = await f.send(message)
   assert.equal(popup.release.version, '1.0.15')
+  assert.equal(popup.release.recheck, false)
   const options = await f.send(message, {
     id: 'test-id',
     url: 'chrome-extension://test-id/options.html',
     tab: { id: 3 },
   })
   assert.equal(options.release.available, true)
+  assert.equal(options.release.recheck, true)
   const webpage = await f.send(message, {
     id: 'test-id',
     url: 'https://example.com/options.html',

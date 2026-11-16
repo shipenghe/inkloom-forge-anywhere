@@ -8,7 +8,7 @@ const source = await readFile(
   'utf8'
 )
 const repository = 'shipenghe/inkloom-forge-anywhere'
-const hour = 60 * 60 * 1000
+const minute = 60 * 1000
 
 function release(version) {
   const tag = `v${version}`
@@ -72,7 +72,7 @@ function fixture(version, remote, storage = {}) {
 test('concurrent surfaces share the check and the cache survives worker restart and extension update', async () => {
   const remote = release('1.0.14')
   const f = fixture('1.0.9', remote)
-  const [popup, options] = await Promise.all([f.check(), f.check()])
+  const [popup, options] = await Promise.all([f.check(), f.check(true)])
   for (const result of [popup, options]) {
     assert.equal(result.available, true)
     assert.equal(result.version, '1.0.14')
@@ -84,9 +84,10 @@ test('concurrent surfaces share the check and the cache survives worker restart 
     `https://api.github.com/repos/${repository}/releases/latest`
   )
   assert.equal(f.requests[0].options.credentials, 'omit')
+  assert.equal(f.requests[0].options.cache, 'no-cache')
   assert.equal(f.requests[0].options.signal, undefined)
 
-  f.advance(hour)
+  f.advance(minute)
   f.install('1.0.14')
   const reopened = f.startWorker()
   assert.equal((await reopened()).available, false)
@@ -94,9 +95,24 @@ test('concurrent surfaces share the check and the cache survives worker restart 
   f.install('1.0.15')
   assert.equal((await reopened()).available, false)
 
-  f.advance(3 * hour)
+  f.advance(4 * minute)
   f.publish(release('1.1.0'))
   assert.equal((await reopened()).available, true)
+  assert.equal(f.requests.length, 2)
+})
+
+test('opening settings rechecks a cached Latest result and refreshes the popup cache', async () => {
+  const f = fixture('1.0.16', release('1.0.16'))
+  assert.equal((await f.check()).available, false)
+
+  f.publish(release('1.0.17'))
+  assert.equal((await f.check()).version, '1.0.16')
+  assert.equal(f.requests.length, 1)
+  const [settings, popup] = await Promise.all([f.check(true), f.check()])
+  assert.equal(settings.version, '1.0.17')
+  assert.equal(settings.available, true)
+  assert.equal(popup.version, '1.0.17')
+  assert.equal((await f.check()).version, '1.0.17')
   assert.equal(f.requests.length, 2)
 })
 
@@ -123,8 +139,13 @@ test('drafts, prereleases, and untrusted or missing ZIPs do not trigger updates'
   }
 })
 
-test('a previous upgrade-check failure does not block a fresh check on reopen', async () => {
-  const oldCache = { forgeReleaseCheck: { release: null, expiresAt: hour } }
+test('older cache entries do not block a fresh check after upgrading', async () => {
+  const oldCache = {
+    forgeReleaseCheck: {
+      release: { version: '1.0.14', downloadUrl: '' },
+      expiresAt: 240 * minute,
+    },
+  }
   const f = fixture('1.0.14', new Error('offline'), oldCache)
   assert.equal(await f.check(), null)
   assert.equal(f.requests.length, 1)

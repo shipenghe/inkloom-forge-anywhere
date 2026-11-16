@@ -1671,13 +1671,13 @@ async function handle(message, sender) {
   }
   if (message.kind === 'CHECK_EXTENSION_UPDATE') {
     const url = sender.url?.split(/[?#]/, 1)[0]
+    const isSettings = url === chrome.runtime.getURL('options.html')
     if (
       sender.id !== chrome.runtime.id ||
-      (url !== chrome.runtime.getURL('popup.html') &&
-        url !== chrome.runtime.getURL('options.html'))
+      (!isSettings && url !== chrome.runtime.getURL('popup.html'))
     )
       throw new Error('无效的插件请求来源')
-    return { ok: true, release: await globalThis.checkForgeRelease() }
+    return { ok: true, release: await globalThis.checkForgeRelease(isSettings) }
   }
   if (!extensionPage(sender)) throw new Error('无效的插件请求来源')
   if (message.kind === 'ENSURE_MEDIA_ENTRY') {
