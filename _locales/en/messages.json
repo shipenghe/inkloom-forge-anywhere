@@ -806,7 +806,7 @@
     "message": "Latest release"
   },
   "downloadUpdate": {
-    "message": "Download update"
+    "message": "Open release page and download"
   },
   "updateCheckUnavailable": {
     "message": "Couldn’t check for updates"

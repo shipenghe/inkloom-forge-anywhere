@@ -41,6 +41,10 @@
     renderVersion()
   }
   i18n.subscribe(render)
+  updateLink.addEventListener('click', () => {
+    if (release?.available && release.releaseUrl)
+      void chrome.tabs.create({ url: release.releaseUrl }).catch(() => {})
+  })
   select.addEventListener('change', async () => {
     select.disabled = true
     statusMessage = ''

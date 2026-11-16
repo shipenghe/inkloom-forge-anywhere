@@ -77,6 +77,10 @@ test('concurrent surfaces share the check and the cache survives worker restart 
     assert.equal(result.available, true)
     assert.equal(result.version, '1.0.14')
     assert.equal(result.downloadUrl, remote.assets[0].browser_download_url)
+    assert.equal(
+      result.releaseUrl,
+      `https://github.com/${repository}/releases/tag/v1.0.14`
+    )
   }
   assert.equal(f.requests.length, 1)
   assert.equal(
@@ -91,6 +95,7 @@ test('concurrent surfaces share the check and the cache survives worker restart 
   f.install('1.0.14')
   const reopened = f.startWorker()
   assert.equal((await reopened()).available, false)
+  assert.equal((await reopened()).releaseUrl, popup.releaseUrl)
   assert.equal(f.requests.length, 1)
   f.install('1.0.15')
   assert.equal((await reopened()).available, false)

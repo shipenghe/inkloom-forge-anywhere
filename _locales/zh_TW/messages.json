@@ -806,7 +806,7 @@
     "message": "最新发布"
   },
   "downloadUpdate": {
-    "message": "下载更新"
+    "message": "打开发布页并下载"
   },
   "updateCheckUnavailable": {
     "message": "暂时无法检查更新"

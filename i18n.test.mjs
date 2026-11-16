@@ -172,6 +172,10 @@ async function openOptions(release = null) {
     querySelectorAll: () => [],
   }
   const { i18n, context, saved } = load('en', storage(), { document })
+  const openedUrls = []
+  context.chrome.tabs = {
+    create: async ({ url }) => openedUrls.push(url),
+  }
   context.chrome.runtime = {
     getManifest: () => ({ version: '1.0.14' }),
     sendMessage: async () => ({ ok: true, release }),
@@ -179,7 +183,7 @@ async function openOptions(release = null) {
   vm.runInContext(optionsSource, context)
   await i18n.ready
   await new Promise((r) => setImmediate(r))
-  return { nodes, saved }
+  return { nodes, saved, openedUrls }
 }
 
 test('options save immediately, sync their labels, and retain the last saved value on failure', async () => {
@@ -197,7 +201,7 @@ test('options save immediately, sync their labels, and retain the last saved val
   assert.equal(nodes.status.textContent, '无法保存设置，请重试')
 })
 
-test('options show a direct ZIP link for an update and Latest for the current release', async () => {
+test('options open the release page from the ZIP link and show Latest for the current release', async () => {
   const current = await openOptions({ version: '1.0.14', available: false })
   assert.equal(current.nodes['installed-version'].textContent, 'v1.0.14')
   assert.equal(current.nodes['update-link'].hidden, true)
@@ -206,16 +210,22 @@ test('options show a direct ZIP link for an update and Latest for the current re
 
   const downloadUrl =
     'https://github.com/shipenghe/inkloom-forge-anywhere/releases/download/v1.0.15/Forge-Anywhere-v1.0.15.zip'
-  const { nodes, saved } = await openOptions({
+  const releaseUrl =
+    'https://github.com/shipenghe/inkloom-forge-anywhere/releases/tag/v1.0.15'
+  const { nodes, saved, openedUrls } = await openOptions({
     version: '1.0.15',
     available: true,
     downloadUrl,
+    releaseUrl,
   })
   const link = nodes['update-link']
   assert.equal(link.hidden, false)
   assert.equal(nodes['latest-badge'].hidden, true)
   assert.equal(link.href, downloadUrl)
-  assert.equal(link['aria-label'], 'Download update v1.0.15')
+  assert.equal(link['aria-label'], 'Open release page and download v1.0.15')
+  assert.deepEqual(openedUrls, [])
+  link.events.click()
+  assert.deepEqual(openedUrls, [releaseUrl])
   assert.equal(nodes['version-detail'].textContent, 'Latest release v1.0.15')
   saved.emit('zh_CN')
   assert.equal(nodes['version-detail'].textContent, '最新发布 v1.0.15')

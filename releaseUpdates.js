@@ -1,6 +1,7 @@
 ;(() => {
   const repository = 'shipenghe/inkloom-forge-anywhere'
   const latestReleaseUrl = `https://api.github.com/repos/${repository}/releases/latest`
+  const releasesUrl = `https://github.com/${repository}/releases`
   const cacheKey = 'forgeReleaseCheck'
   const popupCacheTtl = 5 * 60 * 1000
   let pendingCheck
@@ -21,7 +22,7 @@
       return null
 
     const fileName = `Forge-Anywhere-${tag}.zip`
-    const downloadUrl = `https://github.com/${repository}/releases/download/${tag}/${fileName}`
+    const downloadUrl = `${releasesUrl}/download/${tag}/${fileName}`
     if (
       !Array.isArray(assets) ||
       !assets.some(
@@ -75,6 +76,7 @@
     if (!release) return null
     return {
       ...release,
+      releaseUrl: `${releasesUrl}/tag/v${release.version}`,
       available: isNewer(release.version, chrome.runtime.getManifest().version),
     }
   }
