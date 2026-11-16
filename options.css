@@ -76,7 +76,8 @@ header p {
   text-decoration: none;
 }
 .latest-badge {
-  background: #26734d;
+  background: #e9f1fb;
+  color: #375d88;
 }
 .update-link:hover {
   background: #a72c27;
