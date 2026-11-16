@@ -799,9 +799,17 @@
     "message": "Send inspiration to your canvas.",
     "description": "把灵感送往画布~"
   },
-  "downloadOnGitHub": {
-    "message": "Download on GitHub",
-    "description": "Link to the latest GitHub release"
+  "updateAvailable": {
+    "message": "An update is available"
+  },
+  "latestRelease": {
+    "message": "Latest release"
+  },
+  "downloadUpdate": {
+    "message": "Download update"
+  },
+  "updateCheckUnavailable": {
+    "message": "Couldn’t check for updates"
   },
   "text_56ae3eedcb0e": {
     "message": "Destination canvas",

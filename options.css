@@ -32,7 +32,7 @@ header img {
   border-radius: 15px;
   background: #242326;
 }
-header div {
+.settings-title {
   flex: 1;
 }
 h1 {
@@ -45,12 +45,47 @@ header p {
   font-size: 13px;
   color: #817b84;
 }
-header > span {
+.version-info {
+  position: relative;
+  flex: none;
+  text-align: right;
+}
+.installed-version {
+  display: inline-block;
   padding: 6px 10px;
   border-radius: 999px;
   background: #f0edf1;
   color: #85808a;
   font-size: 11px;
+}
+.update-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translateY(-60%);
+  border: 1px solid #fbfafb;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #c73530;
+  color: white;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-decoration: none;
+}
+.update-link:hover {
+  background: #a72c27;
+}
+.update-link:focus-visible {
+  outline: 2px solid #a72c27;
+  outline-offset: 2px;
+}
+.version-detail {
+  display: block;
+  margin-top: 4px;
+  color: #6e6773;
+  font-size: 11px;
+  line-height: 1.4;
 }
 section {
   padding: 24px;
@@ -94,21 +129,6 @@ footer {
   font-size: 12px;
   line-height: 1.5;
   color: #969099;
-}
-.download-link {
-  display: inline-block;
-  margin: 4px 4px 0;
-  color: #625c67;
-  font-size: 13px;
-  line-height: 1.5;
-  text-underline-offset: 2px;
-}
-.download-link:hover {
-  color: #28262b;
-}
-.download-link:focus-visible {
-  outline: 2px solid #73a585;
-  outline-offset: 2px;
 }
 #status[data-kind='success'] {
   color: #568866;

@@ -32,10 +32,12 @@ const ids = [
   'capture-hint',
   'auto-video-toggle',
   'guide',
+  'open-settings',
 ]
 function fixture(
   initial = {},
-  tab = { id: 123, url: 'https://example.test/watch' }
+  tab = { id: 123, url: 'https://example.test/watch' },
+  release = null
 ) {
   const elements = Object.fromEntries(
     ids.map((id) => [
@@ -75,8 +77,13 @@ function fixture(
   const requested = []
   const chrome = {
     runtime: {
+      async openOptionsPage() {
+        events.push('OPEN_OPTIONS')
+      },
       async sendMessage(message) {
         events.push(message.kind)
+        if (message.kind === 'CHECK_EXTENSION_UPDATE')
+          return { ok: true, release }
         if (message.kind === 'GET_STATE')
           return stateHandler ? stateHandler() : { ok: true, ...state }
         if (message.kind === 'GET_SELECTION_PREVIEW')
@@ -208,6 +215,21 @@ function fixture(
     },
   }
 }
+
+test('a new release marks the settings gear and the gear still opens settings', async () => {
+  const current = fixture()
+  const next = fixture({}, undefined, { available: true, version: '1.0.15' })
+  await Promise.all([current.ready(), next.ready()])
+  assert.equal(
+    current.elements['open-settings'].dataset.updateAvailable,
+    undefined
+  )
+  const button = next.elements['open-settings']
+  assert.equal(button.dataset.updateAvailable, 'true')
+  assert.equal(button.attributes['aria-describedby'], 'settings-update-status')
+  await next.click('open-settings')
+  assert.ok(next.events.includes('OPEN_OPTIONS'))
+})
 
 test('canvas target setup is available on the canvas only', async () => {
   const canvas = fixture({}, { id: 123, url: 'https://forge.art/detail/abc' })

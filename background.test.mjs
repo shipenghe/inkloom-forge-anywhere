@@ -352,6 +352,7 @@ function fixture(mime = 'image/png', controller) {
     Blob,
     Response,
     Uint8Array,
+    checkForgeRelease: async () => ({ version: '1.0.15', available: true }),
     inkloomMseController: controller,
     __inkloomMseRemux: {
       async remuxCapturedVideo() {
@@ -473,6 +474,25 @@ async function selectBlobVideo(f, candidates) {
     { id: 'test-id', tab: { id: 2 } }
   )
 }
+
+test('release checks are available to the popup and settings, including settings opened in a tab', async () => {
+  const f = fixture()
+  const message = { kind: 'CHECK_EXTENSION_UPDATE' }
+  const popup = await f.send(message)
+  assert.equal(popup.release.version, '1.0.15')
+  const options = await f.send(message, {
+    id: 'test-id',
+    url: 'chrome-extension://test-id/options.html',
+    tab: { id: 3 },
+  })
+  assert.equal(options.release.available, true)
+  const webpage = await f.send(message, {
+    id: 'test-id',
+    url: 'https://example.com/options.html',
+    tab: { id: 2 },
+  })
+  assert.equal(webpage.ok, false)
+})
 
 test('opening, cancelling or failing a picker preserves an existing MSE selection', async () => {
   const f = fixture('video/mp4')

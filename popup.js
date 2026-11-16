@@ -610,11 +610,23 @@ if (chrome.storage?.onChanged) {
       .catch(() => {})
   })
 }
-document.getElementById('open-settings')?.addEventListener('click', () => {
-  void chrome.runtime
-    .openOptionsPage()
-    .catch((error) => showStatus(error?.message || '操作失败，请重试', 'error'))
-})
+const settingsButton = document.getElementById('open-settings')
+if (settingsButton) {
+  settingsButton.addEventListener('click', () => {
+    void chrome.runtime
+      .openOptionsPage()
+      .catch((error) =>
+        showStatus(error?.message || '操作失败，请重试', 'error')
+      )
+  })
+  void send({ kind: 'CHECK_EXTENSION_UPDATE' })
+    .then(({ release }) => {
+      if (!release?.available) return
+      settingsButton.dataset.updateAvailable = 'true'
+      settingsButton.setAttribute('aria-describedby', 'settings-update-status')
+    })
+    .catch(() => {})
+}
 globalThis.ForgeI18n?.subscribe(() => {
   globalThis.ForgeI18n.applyDOM()
   if (currentState) render()

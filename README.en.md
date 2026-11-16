@@ -1,14 +1,14 @@
-# Forge Anywhere · v1.0.13
+# Forge Anywhere · v1.0.14
 
 Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.13.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.14.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
-**Download on GitHub** at the bottom of the extension settings page opens the latest release. To update, replace the files in your existing extension folder with the new package, then click **Reload** on the extension management page. Refresh media pages and set your destination canvas again. The extension is installed locally and is not currently listed in the Chrome Web Store.
+When you open the popup or settings, the extension checks the latest GitHub release. If an update is available, the settings gear shows a red dot and the version in settings shows an **Update** badge. Click the badge to download the ZIP. Extract it, replace the files in your existing extension folder, and click **Reload** on the browser’s extension management page. Refresh media pages and set your destination canvas again. The extension is installed locally and is not currently listed in the Chrome Web Store.
 
 Setting the destination again checks and updates the canvas connection script. Old connections cannot handle new-version imports. Updating does not rearrange existing nodes; pan to an empty area before the first import to start a new row layout there.
 
@@ -70,6 +70,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.13.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.14.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

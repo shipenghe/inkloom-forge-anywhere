@@ -799,9 +799,17 @@
     "message": "把灵感送往画布~",
     "description": "把灵感送往画布~"
   },
-  "downloadOnGitHub": {
-    "message": "GitHub 下载",
-    "description": "GitHub 最新版下载页的链接"
+  "updateAvailable": {
+    "message": "有可用更新"
+  },
+  "latestRelease": {
+    "message": "最新发布"
+  },
+  "downloadUpdate": {
+    "message": "下载更新"
+  },
+  "updateCheckUnavailable": {
+    "message": "暂时无法检查更新"
   },
   "text_56ae3eedcb0e": {
     "message": "接收画布",

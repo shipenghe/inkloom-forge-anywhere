@@ -10,7 +10,8 @@ if (typeof importScripts === 'function')
     'imagePreflight.js',
     'mseCaptureController.js',
     'hoverMediaController.js',
-    'mseRemux.bundle.js'
+    'mseRemux.bundle.js',
+    'releaseUpdates.js'
   )
 const t = (value) => globalThis.ForgeI18n?.text(value) ?? value
 void globalThis.inkloomMseController?.recover().catch(() => {})
@@ -1667,6 +1668,16 @@ async function handle(message, sender) {
       return { ok: true }
     }
     throw new Error('无效的媒体数据')
+  }
+  if (message.kind === 'CHECK_EXTENSION_UPDATE') {
+    const url = sender.url?.split(/[?#]/, 1)[0]
+    if (
+      sender.id !== chrome.runtime.id ||
+      (url !== chrome.runtime.getURL('popup.html') &&
+        url !== chrome.runtime.getURL('options.html'))
+    )
+      throw new Error('无效的插件请求来源')
+    return { ok: true, release: await globalThis.checkForgeRelease() }
   }
   if (!extensionPage(sender)) throw new Error('无效的插件请求来源')
   if (message.kind === 'ENSURE_MEDIA_ENTRY') {

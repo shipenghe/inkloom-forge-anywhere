@@ -139,9 +139,16 @@ test('invalid saved settings follow browser; a failed save leaves the active pre
   assert.equal(i18n.locale(), 'en')
   await assert.rejects(i18n.setPreference('fr'))
 })
-test('options save immediately, sync their labels, and retain the last saved value on failure', async () => {
+async function openOptions(release = null) {
   const nodes = Object.fromEntries(
-    ['language', 'settings', 'status'].map((id) => [
+    [
+      'language',
+      'settings',
+      'status',
+      'installed-version',
+      'version-detail',
+      'update-link',
+    ].map((id) => [
       id,
       {
         value: '',
@@ -149,7 +156,9 @@ test('options save immediately, sync their labels, and retain the last saved val
         hidden: true,
         dataset: {},
         events: {},
-        setAttribute() {},
+        setAttribute(name, value) {
+          this[name] = value
+        },
         addEventListener(event, fn) {
           this.events[event] = fn
         },
@@ -162,9 +171,18 @@ test('options save immediately, sync their labels, and retain the last saved val
     querySelectorAll: () => [],
   }
   const { i18n, context, saved } = load('en', storage(), { document })
+  context.chrome.runtime = {
+    getManifest: () => ({ version: '1.0.14' }),
+    sendMessage: async () => ({ ok: true, release }),
+  }
   vm.runInContext(optionsSource, context)
   await i18n.ready
   await new Promise((r) => setImmediate(r))
+  return { nodes, saved }
+}
+
+test('options save immediately, sync their labels, and retain the last saved value on failure', async () => {
+  const { nodes, saved } = await openOptions()
   assert.equal(nodes.settings.hidden, false)
   assert.equal(nodes.language.value, 'auto')
   nodes.language.value = 'zh_CN'
@@ -176,6 +194,35 @@ test('options save immediately, sync their labels, and retain the last saved val
   await nodes.language.events.change()
   assert.equal(nodes.language.value, 'zh_CN')
   assert.equal(nodes.status.textContent, '无法保存设置，请重试')
+})
+
+test('options show a direct ZIP link only when a newer release is available', async () => {
+  const current = await openOptions({ version: '1.0.14', available: false })
+  assert.equal(current.nodes['installed-version'].textContent, 'v1.0.14')
+  assert.equal(current.nodes['update-link'].hidden, true)
+  assert.equal(current.nodes['version-detail'].hidden, true)
+
+  const downloadUrl =
+    'https://github.com/shipenghe/inkloom-forge-anywhere/releases/download/v1.0.15/Forge-Anywhere-v1.0.15.zip'
+  const { nodes, saved } = await openOptions({
+    version: '1.0.15',
+    available: true,
+    downloadUrl,
+  })
+  const link = nodes['update-link']
+  assert.equal(link.hidden, false)
+  assert.equal(link.href, downloadUrl)
+  assert.equal(link['aria-label'], 'Download update v1.0.15')
+  assert.equal(nodes['version-detail'].textContent, 'Latest release v1.0.15')
+  saved.emit('zh_CN')
+  assert.equal(nodes['version-detail'].textContent, '最新发布 v1.0.15')
+
+  const failed = await openOptions()
+  assert.equal(failed.nodes['update-link'].hidden, true)
+  assert.equal(
+    failed.nodes['version-detail'].textContent,
+    'Couldn’t check for updates'
+  )
 })
 test('packaged catalogs cover the same keys and all declared HTML labels', async () => {
   const [en, zh, tw] = await Promise.all(

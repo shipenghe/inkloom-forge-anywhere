@@ -457,6 +457,7 @@ h1 {
   flex: none;
 }
 .settings-button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 24px;
@@ -479,6 +480,17 @@ h1 {
 .settings-button svg {
   width: 19px;
   height: 19px;
+}
+.settings-button[data-update-available='true']::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c73530;
+  box-shadow: 0 0 0 1.5px #fbfafb;
+  content: '';
 }
 :root:lang(en) .prototype {
   padding: 5px 6px;

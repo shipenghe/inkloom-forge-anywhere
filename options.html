@@ -13,11 +13,28 @@
     <main id="settings" aria-busy="true" hidden>
       <header>
         <img src="icons/icon48.png" alt="" />
-        <div>
+        <div class="settings-title">
           <h1>Forge Anywhere</h1>
           <p data-i18n="text_df3d58c7d84b">Settings</p>
         </div>
-        <span>v1.0.13</span>
+        <div class="version-info">
+          <span id="installed-version" class="installed-version">v1.0.14</span>
+          <a
+            id="update-link"
+            class="update-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            hidden
+          >
+            Update
+          </a>
+          <span
+            id="version-detail"
+            class="version-detail"
+            role="status"
+            hidden
+          ></span>
+        </div>
       </header>
       <section>
         <label for="language" data-i18n="text_127527c89c51">
@@ -39,15 +56,6 @@
         <span data-i18n="text_f2db3712a685">Changes save automatically.</span>
         <span id="status" role="status" aria-live="polite"></span>
       </footer>
-      <a
-        class="download-link"
-        href="https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest"
-        target="_blank"
-        rel="noopener noreferrer"
-        data-i18n="downloadOnGitHub"
-      >
-        Download on GitHub
-      </a>
     </main>
   </body>
 </html>
