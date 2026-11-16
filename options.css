@@ -77,18 +77,17 @@ header p {
   }
 }
 .update-link {
-  background: #c73530;
+  background: #dc2626;
   text-decoration: none;
 }
 .latest-badge {
-  background: #e9f1fb;
-  color: #375d88;
+  background: #00875a;
 }
 .update-link:hover {
-  background: #a72c27;
+  background: #b91c1c;
 }
 .update-link:focus-visible {
-  outline: 2px solid #a72c27;
+  outline: 2px solid #b91c1c;
   outline-offset: 2px;
 }
 .version-detail {
