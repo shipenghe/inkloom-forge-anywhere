@@ -6,6 +6,7 @@
   const version = document.getElementById('installed-version')
   const versionDetail = document.getElementById('version-detail')
   const updateLink = document.getElementById('update-link')
+  const latestBadge = document.getElementById('latest-badge')
   let statusMessage = ''
   let release
   const installedVersion = chrome.runtime.getManifest().version
@@ -24,6 +25,7 @@
         ? latestLabel
         : ''
     versionDetail.hidden = !versionDetail.textContent
+    latestBadge.hidden = release?.version !== installedVersion
     updateLink.hidden = !release?.available
     if (release?.available) {
       updateLink.href = release.downloadUrl

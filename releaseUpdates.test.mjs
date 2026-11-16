@@ -27,8 +27,7 @@ function release(version) {
   }
 }
 
-function fixture(version, remote) {
-  const storage = {}
+function fixture(version, remote, storage = {}) {
   const requests = []
   let now = 0
   let installed = version
@@ -44,7 +43,6 @@ function fixture(version, remote) {
   function startWorker() {
     const context = vm.createContext({
       chrome,
-      AbortSignal,
       Date: { now: () => now },
       async fetch(url, options) {
         requests.push({ url, options })
@@ -86,7 +84,7 @@ test('concurrent surfaces share the check and the cache survives worker restart 
     `https://api.github.com/repos/${repository}/releases/latest`
   )
   assert.equal(f.requests[0].options.credentials, 'omit')
-  assert.ok(f.requests[0].options.signal instanceof AbortSignal)
+  assert.equal(f.requests[0].options.signal, undefined)
 
   f.advance(hour)
   f.install('1.0.14')
@@ -125,13 +123,12 @@ test('drafts, prereleases, and untrusted or missing ZIPs do not trigger updates'
   }
 })
 
-test('a failed check is cached briefly and a later opening can find a new release', async () => {
-  const f = fixture('1.0.14', new Error('offline'))
-  assert.equal(await f.check(), null)
-  f.publish(release('1.0.15'))
+test('a previous upgrade-check failure does not block a fresh check on reopen', async () => {
+  const oldCache = { forgeReleaseCheck: { release: null, expiresAt: hour } }
+  const f = fixture('1.0.14', new Error('offline'), oldCache)
   assert.equal(await f.check(), null)
   assert.equal(f.requests.length, 1)
-  f.advance(hour / 2)
+  f.publish(release('1.0.15'))
   assert.equal((await f.check()).available, true)
   assert.equal(f.requests.length, 2)
 })

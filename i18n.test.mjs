@@ -148,6 +148,7 @@ async function openOptions(release = null) {
       'installed-version',
       'version-detail',
       'update-link',
+      'latest-badge',
     ].map((id) => [
       id,
       {
@@ -196,11 +197,12 @@ test('options save immediately, sync their labels, and retain the last saved val
   assert.equal(nodes.status.textContent, '无法保存设置，请重试')
 })
 
-test('options show a direct ZIP link only when a newer release is available', async () => {
+test('options show a direct ZIP link for an update and Latest for the current release', async () => {
   const current = await openOptions({ version: '1.0.14', available: false })
   assert.equal(current.nodes['installed-version'].textContent, 'v1.0.14')
   assert.equal(current.nodes['update-link'].hidden, true)
   assert.equal(current.nodes['version-detail'].hidden, true)
+  assert.equal(current.nodes['latest-badge'].hidden, false)
 
   const downloadUrl =
     'https://github.com/shipenghe/inkloom-forge-anywhere/releases/download/v1.0.15/Forge-Anywhere-v1.0.15.zip'
@@ -211,6 +213,7 @@ test('options show a direct ZIP link only when a newer release is available', as
   })
   const link = nodes['update-link']
   assert.equal(link.hidden, false)
+  assert.equal(nodes['latest-badge'].hidden, true)
   assert.equal(link.href, downloadUrl)
   assert.equal(link['aria-label'], 'Download update v1.0.15')
   assert.equal(nodes['version-detail'].textContent, 'Latest release v1.0.15')
@@ -219,10 +222,15 @@ test('options show a direct ZIP link only when a newer release is available', as
 
   const failed = await openOptions()
   assert.equal(failed.nodes['update-link'].hidden, true)
+  assert.equal(failed.nodes['latest-badge'].hidden, true)
   assert.equal(
     failed.nodes['version-detail'].textContent,
     'Couldn’t check for updates'
   )
+
+  const ahead = await openOptions({ version: '1.0.13', available: false })
+  assert.equal(ahead.nodes['latest-badge'].hidden, true)
+  assert.equal(ahead.nodes['update-link'].hidden, true)
 })
 test('packaged catalogs cover the same keys and all declared HTML labels', async () => {
   const [en, zh, tw] = await Promise.all(

@@ -3,13 +3,11 @@
   const latestReleaseUrl = `https://api.github.com/repos/${repository}/releases/latest`
   const cacheKey = 'forgeReleaseCheck'
   const successTtl = 4 * 60 * 60 * 1000
-  const failureTtl = 30 * 60 * 1000
   let pendingCheck
 
   async function fetchRelease() {
     const response = await fetch(latestReleaseUrl, {
       credentials: 'omit',
-      signal: AbortSignal.timeout(5000),
     })
     if (!response.ok) return null
     const { tag_name: tag, draft, prerelease, assets } = await response.json()
@@ -39,10 +37,11 @@
   async function cachedRelease() {
     const saved = await chrome.storage.local.get(cacheKey).catch(() => ({}))
     const cached = saved[cacheKey]
-    if (cached?.expiresAt > Date.now()) return cached.release
+    if (cached?.release && cached.expiresAt > Date.now()) return cached.release
 
     const release = await fetchRelease().catch(() => null)
-    const expiresAt = Date.now() + (release ? successTtl : failureTtl)
+    if (!release) return null
+    const expiresAt = Date.now() + successTtl
     await chrome.storage.local
       .set({ [cacheKey]: { release, expiresAt } })
       .catch(() => {})
