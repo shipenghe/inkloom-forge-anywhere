@@ -38,6 +38,7 @@ function fixture(mime = 'image/png', controller) {
   const focusCalls = []
   const scriptCalls = []
   const fetchUrls = []
+  const sessionRules = new Map()
   const permissionsRequested = []
   const badges = []
   const storage = {}
@@ -88,6 +89,12 @@ function fixture(mime = 'image/png', controller) {
       },
       async contains() {
         return previouslyGranted
+      },
+    },
+    declarativeNetRequest: {
+      async updateSessionRules({ removeRuleIds = [], addRules = [] }) {
+        for (const id of removeRuleIds) sessionRules.delete(id)
+        for (const rule of addRules) sessionRules.set(rule.id, rule)
       },
     },
     contextMenus: {
@@ -373,7 +380,8 @@ function fixture(mime = 'image/png', controller) {
     atob: (value) => Buffer.from(value, 'base64').toString('binary'),
     fetch: async (url) => {
       fetchUrls.push(url)
-      if (responseOverride) return responseOverride(url)
+      if (responseOverride)
+        return responseOverride(url, [...sessionRules.values()])
       return new Response(bytes, {
         headers: {
           'Content-Type': mime,
@@ -422,6 +430,7 @@ function fixture(mime = 'image/png', controller) {
     badges,
     scriptCalls,
     fetchUrls,
+    sessionRules,
     previewCalls,
     activityStates,
     focusCalls,
@@ -876,6 +885,108 @@ test('right-click image keeps an unreadable selected resource for explicit popup
     false
   )
   assert.equal(f.permissionsRequested.length, 0)
+})
+
+test('Weibo right-click uses a temporary rule for only the selected image request', async () => {
+  const f = fixture()
+  f.grantExisting()
+  await f.send({ kind: 'SET_TARGET', tabId: 1 })
+  const url = 'https://wx2.sinaimg.cn/large/photo.png?size=large&foo=a.b'
+  f.setResponse((requestUrl, rules) => {
+    assert.equal(requestUrl, url)
+    assert.equal(rules.length, 1)
+    const [rule] = rules
+    const filter = new RegExp(rule.condition.regexFilter)
+    assert.equal(filter.test(requestUrl), true)
+    assert.equal(filter.test(url + '&another=1'), false)
+    assert.equal(filter.test(url.replace('a.b', 'axb')), false)
+    assert.equal(rule.condition.isUrlFilterCaseSensitive, true)
+    assert.deepEqual(Array.from(rule.condition.initiatorDomains), ['test-id'])
+    assert.deepEqual(Array.from(rule.condition.resourceTypes), [
+      'xmlhttprequest',
+    ])
+    assert.deepEqual(Array.from(rule.condition.requestMethods), ['get'])
+    assert.deepEqual(
+      { ...rule.action.requestHeaders[0] },
+      {
+        header: 'Referer',
+        operation: 'set',
+        value: 'https://weibo.com/',
+      }
+    )
+    return new Response(f.bytes, { headers: { 'Content-Type': 'image/png' } })
+  })
+  const result = await f.send(
+    { kind: 'HOVER_MEDIA_SEND', mediaKind: 'image', url },
+    {
+      id: 'test-id',
+      tab: { id: 2 },
+      frameId: 0,
+      documentId: 'source-document',
+      url: 'https://weibo.com/ttarticle/p/show?id=123',
+    }
+  )
+  assert.equal(result.ok, true, result.error)
+  assert.deepEqual(f.uploadBytes(), f.bytes)
+  assert.equal(f.sessionRules.size, 0)
+})
+
+test('Weibo popup video removes its request rule after either a failed or successful fetch', async () => {
+  const f = fixture('video/mp4')
+  await f.send({ kind: 'SET_TARGET', tabId: 1 })
+  await f.send({ kind: 'START_PICKER', tabId: 2 })
+  const url = 'https://f.video.weibocdn.com/video.mp4'
+  await f.send(
+    { kind: 'MEDIA_SELECTED', mediaKind: 'video', url: url + '#t=2' },
+    { id: 'test-id', tab: { id: 2 }, url: 'https://weibo.com/tv/show/123' }
+  )
+  let fails = true
+  f.setResponse((requestUrl, rules) => {
+    assert.equal(requestUrl, url)
+    assert.equal(rules.length, 1)
+    assert.equal(new RegExp(rules[0].condition.regexFilter).test(url), true)
+    if (fails) throw new TypeError('network failure')
+    return new Response(f.bytes, { headers: { 'Content-Type': 'video/mp4' } })
+  })
+  assert.equal((await f.send({ kind: 'IMPORT' })).ok, false)
+  assert.equal(f.sessionRules.size, 0)
+  fails = false
+  const result = await f.send({ kind: 'IMPORT' })
+  assert.equal(result.ok, true, result.error)
+  assert.deepEqual(f.uploadBytes(), f.bytes)
+  assert.equal(f.sessionRules.size, 0)
+})
+
+test('Weibo native menu uses the clicked frame origin and leaves other requests alone', async () => {
+  for (const [frameUrl, srcUrl, expected] of [
+    ['https://www.weibo.com/post', 'https://wx2.sinaimg.cn/photo.png', 1],
+    [
+      'https://weibo.com.example.org/post',
+      'https://wx2.sinaimg.cn/photo.png',
+      0,
+    ],
+    ['https://weibo.com/post', 'https://sinaimg.cn.example.org/photo.png', 0],
+    [undefined, 'https://wx2.sinaimg.cn/photo.png', 0],
+  ]) {
+    const f = fixture()
+    f.grantExisting()
+    await f.send({ kind: 'SET_TARGET', tabId: 1 })
+    f.setResponse((_url, rules) => {
+      assert.equal(rules.length, expected)
+      return new Response(f.bytes, { headers: { 'Content-Type': 'image/png' } })
+    })
+    f.context({
+      menuItemId: 'send-media-to-canvas',
+      pageUrl: 'https://weibo.com/post',
+      frameUrl,
+      frameId: 1,
+      mediaType: 'image',
+      srcUrl,
+    })
+    await waitFor(() => f.storage.lastStatus === '图片已交给画布')
+    assert.equal(f.fetchUrls.length, 1)
+    assert.equal(f.sessionRules.size, 0)
+  }
 })
 
 test('right-click direct video works without automatic capture and missing CDN access can be retried in popup', async () => {

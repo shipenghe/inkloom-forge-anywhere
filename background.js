@@ -3,6 +3,8 @@ const CHUNK_SIZE = 192 * 1024
 const MAX_TRANSFER_SIZE = 200 * 1024 * 1024
 const CONTEXT_MENU_ID = 'send-media-to-canvas'
 const FORGE_HOME_URL = 'https://forge.art/'
+const WEIBO_ORIGIN = 'https://weibo.com'
+const WEIBO_MEDIA_RULE_ID = 1
 if (typeof importScripts === 'function')
   importScripts(
     'i18n-data.js',
@@ -18,6 +20,9 @@ void globalThis.inkloomMseController?.recover().catch(() => {})
 void globalThis.forgeMediaEntryController?.recover().catch(() => {})
 let transfer = null
 let targetGeneration = 0
+const weiboMediaRuleCleanup = chrome.declarativeNetRequest
+  ?.updateSessionRules({ removeRuleIds: [WEIBO_MEDIA_RULE_ID] })
+  .catch(() => {})
 
 async function state() {
   return chrome.storage.session.get([
@@ -641,6 +646,78 @@ async function checkedVideoResponse(response) {
     })
   throw new Error('视频格式不受支持或数据不完整')
 }
+function isWeiboPage(raw) {
+  try {
+    const url = new URL(raw)
+    return (
+      url.protocol === 'https:' &&
+      (url.origin === WEIBO_ORIGIN || url.origin === 'https://www.weibo.com')
+    )
+  } catch {
+    return false
+  }
+}
+async function fetchSelectedMedia(url, selection) {
+  const options = { credentials: 'include' }
+  const rules = chrome.declarativeNetRequest
+  const weiboCdn =
+    selection.mediaKind === 'image'
+      ? /(?:^|\.)sinaimg\.cn$/.test(url.hostname)
+      : /(?:^|\.)video\.weibocdn\.com$/.test(url.hostname)
+  if (
+    !rules ||
+    !selection.weiboPage ||
+    !weiboCdn ||
+    url.protocol !== 'https:' ||
+    url.port
+  )
+    return fetch(url.href, options)
+
+  await weiboMediaRuleCleanup
+  const removeRuleIds = [WEIBO_MEDIA_RULE_ID]
+  // Weibo's media servers expect the site's origin on requests for a selected
+  // file. Apply it only to this extension's request for that exact URL.
+  const requestUrl = url.href.split('#', 1)[0]
+  const regexFilter =
+    '^' + requestUrl.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&') + '$'
+  try {
+    await rules.updateSessionRules({
+      removeRuleIds,
+      addRules: [
+        {
+          id: WEIBO_MEDIA_RULE_ID,
+          action: {
+            type: 'modifyHeaders',
+            requestHeaders: [
+              {
+                header: 'Referer',
+                operation: 'set',
+                value: WEIBO_ORIGIN + '/',
+              },
+            ],
+          },
+          condition: {
+            regexFilter,
+            isUrlFilterCaseSensitive: true,
+            initiatorDomains: [chrome.runtime.id],
+            requestMethods: ['get'],
+            resourceTypes: ['xmlhttprequest'],
+          },
+        },
+      ],
+    })
+  } catch {
+    return fetch(url.href, options)
+  }
+  try {
+    return await fetch(requestUrl, {
+      ...options,
+      redirect: 'error',
+    })
+  } finally {
+    await rules.updateSessionRules({ removeRuleIds }).catch(() => {})
+  }
+}
 async function alternateVideo(selection) {
   let missingPermission = false
   for (const raw of normalizeVideoCandidates(
@@ -654,7 +731,7 @@ async function alternateVideo(selection) {
       continue
     }
     try {
-      const response = await fetch(url.href, { credentials: 'include' })
+      const response = await fetchSelectedMedia(url, selection)
       return await checkedVideoResponse(response)
     } catch {
       // Try the next source only before a transfer is started.
@@ -991,7 +1068,7 @@ async function runImport(contextSelection, existingTransfer) {
       try {
         let response
         try {
-          response = await fetch(url.href, { credentials: 'include' })
+          response = await fetchSelectedMedia(url, selection)
         } catch {
           throw new Error(
             '无法获取媒体，可能需要网站权限、登录或该网站禁止访问'
@@ -1101,7 +1178,11 @@ async function contextSelection(info, tab) {
       !/^(https?:|blob:|data:)/i.test(info.srcUrl))
   )
     throw new Error('无法读取该媒体，请选择其他素材')
-  const target = { tabId: tab.id, frameIds: [info.frameId ?? 0] }
+  const frameId = info.frameId ?? 0
+  const target = { tabId: tab.id, frameIds: [frameId] }
+  const pageUrl =
+    info.frameUrl || (frameId === 0 ? info.pageUrl || tab.url : '')
+  const weiboPage = isWeiboPage(pageUrl)
   try {
     await chrome.scripting.executeScript({
       target,
@@ -1148,7 +1229,8 @@ async function contextSelection(info, tab) {
     return {
       tabId: tab.id,
       title: (tab.title || '').slice(0, 160),
-      frameId: info.frameId ?? 0,
+      frameId,
+      ...(weiboPage ? { weiboPage } : {}),
       url: candidate.url,
       mediaKind: candidate.mediaKind,
       ...(candidate.mediaKind === 'image' && candidate.displayUrl
@@ -1213,7 +1295,8 @@ async function contextSelection(info, tab) {
   return {
     tabId: tab.id,
     title: (tab.title || '').slice(0, 160),
-    frameId: info.frameId ?? 0,
+    frameId,
+    ...(weiboPage ? { weiboPage } : {}),
     url,
     mediaKind: info.mediaType,
     ...(info.mediaType === 'image' ? { displayUrl: info.srcUrl } : {}),
@@ -1475,6 +1558,7 @@ async function handle(message, sender) {
       title: (sender.tab.title || '').slice(0, 160),
       frameId: 0,
       documentId: sender.documentId,
+      ...(isWeiboPage(sender.url) ? { weiboPage: true } : {}),
       url: message.url,
       mediaKind,
       ...(mediaKind === 'image' ? { displayUrl: message.url } : {}),
@@ -1592,6 +1676,7 @@ async function handle(message, sender) {
         tabId: sender.tab.id,
         frameId: sender.frameId ?? 0,
         ...(sender.documentId ? { documentId: sender.documentId } : {}),
+        ...(isWeiboPage(sender.url) ? { weiboPage: true } : {}),
         ...(mse ? { mse: true, documentId: capture.documentId } : {}),
         url: message.url,
         mediaKind: message.mediaKind,
