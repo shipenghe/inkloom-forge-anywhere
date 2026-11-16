@@ -95,6 +95,21 @@ footer {
   line-height: 1.5;
   color: #969099;
 }
+.download-link {
+  display: inline-block;
+  margin: 4px 4px 0;
+  color: #625c67;
+  font-size: 13px;
+  line-height: 1.5;
+  text-underline-offset: 2px;
+}
+.download-link:hover {
+  color: #28262b;
+}
+.download-link:focus-visible {
+  outline: 2px solid #73a585;
+  outline-offset: 2px;
+}
 #status[data-kind='success'] {
   color: #568866;
 }
