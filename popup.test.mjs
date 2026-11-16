@@ -32,6 +32,7 @@ const ids = [
   'capture-hint',
   'auto-video-toggle',
   'guide',
+  'installed-version',
   'open-settings',
 ]
 function fixture(
@@ -77,6 +78,7 @@ function fixture(
   const requested = []
   const chrome = {
     runtime: {
+      getManifest: () => ({ version: '1.2.3' }),
       async openOptionsPage() {
         events.push('OPEN_OPTIONS')
       },
@@ -215,6 +217,13 @@ function fixture(
     },
   }
 }
+
+test('the popup shows the loaded extension version rather than the release version', async () => {
+  const f = fixture({}, undefined, { available: true, version: '1.2.4' })
+  await f.ready()
+  assert.equal(f.elements['installed-version'].textContent, 'v1.2.3')
+  assert.equal(f.elements['installed-version'].title, 'Forge Anywhere v1.2.3')
+})
 
 test('a new release marks the settings gear and the gear still opens settings', async () => {
   const current = fixture()

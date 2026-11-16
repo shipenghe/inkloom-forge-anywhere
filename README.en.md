@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.17
+# Forge Anywhere · v1.0.18
 
 Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.17.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.18.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -70,6 +70,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.17.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.18.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

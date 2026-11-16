@@ -610,6 +610,11 @@ if (chrome.storage?.onChanged) {
       .catch(() => {})
   })
 }
+const versionBadge = document.getElementById('installed-version')
+const versionLabel = `v${chrome.runtime.getManifest().version}`
+versionBadge.textContent = versionLabel
+versionBadge.title = `Forge Anywhere ${versionLabel}`
+
 const settingsButton = document.getElementById('open-settings')
 if (settingsButton) {
   settingsButton.addEventListener('click', () => {
