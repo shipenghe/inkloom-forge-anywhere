@@ -140,14 +140,31 @@
     if (!anchor?.isConnected) return null
 
     // QQ Music appends its zero-size audio element directly to the body.
-    const tracks = [...document.querySelectorAll('body > audio')].filter(
-      (audio) => audio.readyState >= 1 && !audio.error && !audio.ended
-    )
+    const tracks = [
+      ...document.querySelectorAll('body > audio:not([data-forge-qq-audio])'),
+    ].filter((audio) => audio.readyState >= 1 && !audio.error && !audio.ended)
     const playing = tracks.filter((audio) => !audio.paused)
     const candidates = playing.length ? playing : tracks
-    if (candidates.length !== 1) return null
-    const [element] = candidates
-    if (element.mediaKeys || !/^(https?:|blob:)/i.test(element.currentSrc))
+    if (candidates.length > 1) return null
+    let [element] = candidates
+    if (!element) {
+      const song = anchor.querySelector?.(
+        '.player_music__info a[href*="/songDetail/"]'
+      )?.pathname
+      if (!song) return null
+      element = document.querySelector('audio[data-forge-qq-song]')
+      if (
+        element?.getAttribute('data-forge-qq-song') !== song ||
+        element.readyState < 1 ||
+        !element.currentSrc.startsWith('blob:')
+      )
+        return null
+    }
+    if (
+      !element ||
+      element.mediaKeys ||
+      !/^(https?:|blob:)/i.test(element.currentSrc)
+    )
       return null
     return { element, anchor, control }
   }
