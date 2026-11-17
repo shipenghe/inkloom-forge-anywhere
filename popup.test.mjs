@@ -20,6 +20,8 @@ const ids = [
   'selection-title',
   'image-icon',
   'video-icon',
+  'toggle-video-preview',
+  'video-preview',
   'media-card',
   'media-status',
   'media-feedback',
@@ -57,6 +59,10 @@ function fixture(
         setAttribute(name, value) {
           this.attributes[name] = value
         },
+        toggleAttribute(name, force) {
+          if (force) this.attributes[name] = ''
+          else delete this.attributes[name]
+        },
         removeAttribute(name) {
           delete this.attributes[name]
           delete this[name]
@@ -74,6 +80,7 @@ function fixture(
   let autoCaptureError = null
   let targetError = null
   let previewHandler = async () => ({ ok: true, selection: null })
+  let playbackReader = async () => null
   let stateHandler = null
   const requested = []
   const chrome = {
@@ -164,6 +171,7 @@ function fixture(
   vm.runInNewContext(source, {
     chrome,
     URL,
+    ForgeVideoPlayback: { read: (id) => playbackReader(id) },
     setTimeout,
     clearTimeout,
     document: {
@@ -184,6 +192,9 @@ function fixture(
     requested,
     setPreviewHandler(handler) {
       previewHandler = handler
+    },
+    setPlaybackReader(reader) {
+      playbackReader = reader
     },
     setStateHandler(handler) {
       stateHandler = handler
@@ -564,8 +575,14 @@ test('the preview belongs to the selected media and accepts only embedded safe i
   assert.equal(f.elements['selection-title'].textContent, '风景视频')
   assert.equal(f.elements['selection-icon'].hidden, true)
   assert.equal(f.elements['select-media'].textContent, '重新选取')
-  assert.equal(f.elements['image-icon'].hidden, true)
-  assert.equal(f.elements['video-icon'].hidden, false)
+  assert.equal(
+    Object.hasOwn(f.elements['image-icon'].attributes, 'hidden'),
+    true
+  )
+  assert.equal(
+    Object.hasOwn(f.elements['video-icon'].attributes, 'hidden'),
+    false
+  )
   f.state.selection = {
     mediaKind: 'image',
     url: 'https://example.test/image',
@@ -576,6 +593,14 @@ test('the preview belongs to the selected media and accepts only embedded safe i
   assert.equal(f.elements['selection-preview'].hidden, true)
   assert.equal(f.elements['selection-preview'].src, undefined)
   assert.equal(f.elements['selection-icon'].hidden, false)
+  assert.equal(
+    Object.hasOwn(f.elements['image-icon'].attributes, 'hidden'),
+    false
+  )
+  assert.equal(
+    Object.hasOwn(f.elements['video-icon'].attributes, 'hidden'),
+    true
+  )
   assert.equal(f.elements['selection-title'].hidden, true)
   f.state.selection = null
   f.change({ lastStatus: {} })
@@ -786,6 +811,36 @@ test('the existing card retains the latest sent clip and its original video time
   await f.ready()
   assert.ok(f.events.includes('VIEW_TARGET'))
   assert.ok(f.events.includes('CLOSE'))
+})
+
+test('the panel plays the locally stored video for the current successful delivery', async () => {
+  const f = fixture({
+    mediaActivity: { id: 'sent', status: 'sent', mediaKind: 'video' },
+    playableVideoId: 'sent',
+  })
+  const player = f.elements['video-preview']
+  const playButton = f.elements['toggle-video-preview']
+  const events = []
+  player.play = async () => events.push('play')
+  player.pause = () => events.push('pause')
+  player.load = () => events.push('load')
+  f.setPlaybackReader(async (id) => {
+    assert.equal(id, 'sent')
+    return new Blob(['video'], { type: 'video/mp4' })
+  })
+  await f.ready()
+  assert.equal(playButton.hidden, false)
+  await f.click('toggle-video-preview')
+  assert.equal(player.hidden, false)
+  assert.match(player.src, /^blob:/)
+  assert.equal(playButton.attributes['aria-expanded'], 'true')
+  f.state.mediaActivity = { id: 'other', status: 'sent', mediaKind: 'image' }
+  f.change({ mediaActivity: {} })
+  await f.ready()
+  assert.equal(player.hidden, true)
+  assert.equal(playButton.hidden, true)
+  assert.equal(player.src, undefined)
+  assert.deepEqual(events, ['play', 'pause', 'load'])
 })
 
 test('new activity statuses replace previous feedback without reviving a stale selection', async () => {

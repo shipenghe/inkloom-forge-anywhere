@@ -20,6 +20,8 @@ const selectionIcon = document.getElementById('selection-icon')
 const selectionTitle = document.getElementById('selection-title')
 const imageIcon = document.getElementById('image-icon')
 const videoIcon = document.getElementById('video-icon')
+const toggleVideoPreview = document.getElementById('toggle-video-preview')
+const videoPreview = document.getElementById('video-preview')
 const setButton = document.getElementById('set-target')
 const clearButton = document.getElementById('clear-target')
 const viewButton = document.getElementById('view-target')
@@ -66,6 +68,8 @@ let hydrated = false
 let activityRevision = null
 let refreshGeneration = 0
 let viewingTarget = false
+let playableVideoId = null
+let openVideo = null
 const selectionPreviews = new Map()
 
 function revealPanel() {
@@ -232,8 +236,8 @@ function renderSelection(selection) {
   if (safePreview) selectionPreview.src = preview
   else selectionPreview.removeAttribute('src')
   const isVideo = selection?.mediaKind === 'video'
-  imageIcon.hidden = isVideo
-  videoIcon.hidden = !isVideo
+  imageIcon.toggleAttribute('hidden', isVideo)
+  videoIcon.toggleAttribute('hidden', !isVideo)
   const title =
     typeof selection?.title === 'string' && selection.title.trim()
       ? selection.title.trim()
@@ -242,6 +246,56 @@ function renderSelection(selection) {
   selectionTitle.title = title
   selectionTitle.hidden = !title
 }
+function renderVideoPreview() {
+  toggleVideoPreview.hidden = !playableVideoId
+  toggleVideoPreview.setAttribute('aria-expanded', String(!!openVideo))
+  const label = t(openVideo ? '收起视频' : '播放视频')
+  toggleVideoPreview.setAttribute('aria-label', label)
+  toggleVideoPreview.title = label
+}
+function closeVideoPreview() {
+  const url = openVideo?.url
+  openVideo = null
+  videoPreview.hidden = true
+  if (url) {
+    videoPreview.pause()
+    videoPreview.removeAttribute('src')
+    videoPreview.load()
+    URL.revokeObjectURL(url)
+  }
+}
+toggleVideoPreview.addEventListener('click', async () => {
+  if (openVideo) {
+    closeVideoPreview()
+    renderVideoPreview()
+    return
+  }
+  if (!playableVideoId) return
+  const opening = { id: playableVideoId }
+  openVideo = opening
+  renderVideoPreview()
+  try {
+    const file = await globalThis.ForgeVideoPlayback.read(opening.id)
+    if (openVideo !== opening) return
+    if (!file) throw new Error()
+    opening.url = URL.createObjectURL(file)
+    videoPreview.src = opening.url
+    videoPreview.setAttribute('aria-label', t('视频预览'))
+    videoPreview.hidden = false
+    void videoPreview.play().catch(() => {})
+  } catch {
+    if (openVideo !== opening) return
+    closeVideoPreview()
+    renderVideoPreview()
+    showStatus('视频预览不可用，请在画布中播放', 'error')
+  }
+})
+videoPreview.addEventListener('error', () => {
+  if (!openVideo?.url) return
+  closeVideoPreview()
+  renderVideoPreview()
+  showStatus('视频预览不可用，请在画布中播放', 'error')
+})
 function displayedSelection() {
   const selection = currentState?.selection
   const activity = currentState?.mediaActivity
@@ -281,6 +335,14 @@ function renderMediaCard() {
   guide.hidden = hasMedia
   selectionPanel.hidden = !hasMedia
   renderSelection(item)
+  playableVideoId =
+    item?.mediaKind === 'video' &&
+    activity?.status === 'sent' &&
+    activity.id === currentState?.playableVideoId
+      ? activity.id
+      : null
+  if (openVideo && openVideo.id !== playableVideoId) closeVideoPreview()
+  renderVideoPreview()
   if (!hasMedia) return
   const isClip = item.isClip || item.mse
   const kind =
@@ -598,6 +660,7 @@ if (chrome.storage?.onChanged) {
         (changes.lastStatus ||
           changes.mediaActivity ||
           changes.lastDelivery ||
+          changes.playableVideoId ||
           changes.selection ||
           changes.target ||
           changes.mseCapture)

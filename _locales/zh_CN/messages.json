@@ -1005,5 +1005,21 @@
   "openForge": {
     "message": "打开 Forge",
     "description": "打开 Forge"
+  },
+  "playVideoPreview": {
+    "message": "播放视频",
+    "description": "播放视频"
+  },
+  "collapseVideoPreview": {
+    "message": "收起视频",
+    "description": "收起视频"
+  },
+  "videoPreview": {
+    "message": "视频预览",
+    "description": "视频预览"
+  },
+  "videoPreviewUnavailable": {
+    "message": "视频预览不可用，请在画布中播放",
+    "description": "视频预览不可用，请在画布中播放"
   }
 }

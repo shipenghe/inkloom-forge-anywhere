@@ -214,56 +214,75 @@
         <div id="media-card" class="media-card" aria-busy="false">
           <div id="selection-panel" class="selection-panel" hidden>
             <div class="selection-heading">
-              <img
-                id="selection-preview"
-                class="selection-preview"
-                alt="所选素材预览"
-                data-i18n-alt="text_5e8298006d05"
-                hidden
-              />
-              <span
-                id="selection-icon"
-                class="selection-icon"
-                aria-hidden="true"
-              >
-                <svg id="image-icon" viewBox="0 0 24 24" fill="none">
-                  <rect
-                    x="3.5"
-                    y="3.5"
-                    width="17"
-                    height="17"
-                    rx="3"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-                  <path
-                    d="m4 17 5-5 3 3 3-4 5 6"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <svg id="video-icon" viewBox="0 0 24 24" fill="none" hidden>
-                  <rect
-                    x="3.5"
-                    y="3.5"
-                    width="17"
-                    height="17"
-                    rx="4"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                  />
-                  <path d="m10 8 6 4-6 4V8Z" fill="currentColor" />
-                </svg>
-              </span>
+              <div class="selection-media">
+                <img
+                  id="selection-preview"
+                  class="selection-preview"
+                  alt="所选素材预览"
+                  data-i18n-alt="text_5e8298006d05"
+                  hidden
+                />
+                <span
+                  id="selection-icon"
+                  class="selection-icon"
+                  aria-hidden="true"
+                >
+                  <svg id="image-icon" viewBox="0 0 24 24" fill="none">
+                    <rect
+                      x="3.5"
+                      y="3.5"
+                      width="17"
+                      height="17"
+                      rx="3"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+                    <path
+                      d="m4 17 5-5 3 3 3-4 5 6"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <svg id="video-icon" viewBox="0 0 24 24" fill="none" hidden>
+                    <rect
+                      x="3.5"
+                      y="3.5"
+                      width="17"
+                      height="17"
+                      rx="4"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    />
+                    <path d="m10 8 6 4-6 4V8Z" fill="currentColor" />
+                  </svg>
+                </span>
+                <button
+                  id="toggle-video-preview"
+                  class="toggle-video-preview"
+                  type="button"
+                  aria-controls="video-preview"
+                  aria-expanded="false"
+                  hidden
+                >
+                  <span aria-hidden="true"></span>
+                </button>
+              </div>
               <div class="selection-copy">
                 <span id="selection">已选素材</span>
                 <p id="selection-title" class="selection-title" hidden></p>
                 <p id="selection-detail" class="selection-detail"></p>
               </div>
             </div>
+            <video
+              id="video-preview"
+              class="video-preview"
+              controls
+              playsinline
+              hidden
+            ></video>
           </div>
           <div id="guide" class="guide">
             <div class="guide-icon" aria-hidden="true">
@@ -325,6 +344,7 @@
     </main>
     <script src="i18n-data.js" defer></script>
     <script src="i18n.js" defer></script>
+    <script src="videoPlayback.js" defer></script>
     <script src="popup.js" defer></script>
   </body>
 </html>

@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.22
+# Forge Anywhere · v1.0.23
 
 Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.22.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.23.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -25,6 +25,8 @@ If no entry appears, open the extension once on the media page, or use **Choose 
 Translucent gradient overlays, including those on Pexels photos and video previews, are supported. Right-clicking keeps the site's own menu and shows the Forge icon. A decoded video preview over its cover is selected as video only when the hit stack confirms it is above that cover. Opaque covers and ambiguous overlaps are left unselected.
 
 The panel keeps the latest media preview and its selected, sending, sent, or failed state in one card. **Sent** means the file was handed to the canvas and handling was detected. Uploading and saving still depend on the canvas; check its result before retrying.
+
+Images and videos retain their original aspect ratio in the panel. After delivery, click the video thumbnail to play the file in the panel. The most recently delivered video is cached locally until the next delivery or a browser restart.
 
 ## Placement
 
@@ -70,6 +72,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.22.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.23.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

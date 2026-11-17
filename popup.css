@@ -364,13 +364,63 @@ h1 {
   font-size: 11px;
   line-height: 1.45;
 }
-.selection-preview {
+.selection-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
   width: 66px;
   height: 66px;
-  flex: none;
+}
+.selection-preview {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
   background: #f5f2f6;
+}
+.toggle-video-preview {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+.toggle-video-preview span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #242326c9;
+}
+.toggle-video-preview span::before {
+  content: '';
+  margin-left: 2px;
+  border: 5px solid transparent;
+  border-right: 0;
+  border-left: 8px solid white;
+}
+.toggle-video-preview[aria-expanded='true'] span::before {
+  width: 10px;
+  height: 2px;
+  margin: 0;
+  border: 0;
+  background: white;
+}
+.video-preview {
+  display: block;
+  width: 100%;
+  height: 156px;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #242326;
+  object-fit: contain;
 }
 .selection-copy {
   min-width: 0;

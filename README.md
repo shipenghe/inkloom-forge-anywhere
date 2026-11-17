@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.22
+# Forge Anywhere · v1.0.23
 
 这个 Chrome / Chromium Manifest V3 扩展将用户选中的网页图片或视频交给已打开的 Inkloom 工作流画布，复用画布已有的拖放上传流程。插件需要本地加载，尚未上架。素材需要能由浏览器获取到可上传的文件；受保护或限制访问的来源可能失败。
 
 ## 安装和使用
 
-1. 在 [GitHub 下载最新版](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest)，从 Assets 下载 `Forge-Anywhere-v1.0.22.zip` 并解压。
+1. 在 [GitHub 下载最新版](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest)，从 Assets 下载 `Forge-Anywhere-v1.0.23.zip` 并解压。
 2. 打开浏览器的扩展管理页（Chrome 输入 `chrome://extensions`，Edge 输入 `edge://extensions`），开启开发者模式，选择“加载已解压的扩展程序”，选中包含 `manifest.json` 的 `Forge-Anywhere` 文件夹。
 3. 登录并打开 Inkloom 工作流画布 `/detail/<画布 ID>`，在插件里将当前画布设为接收目标。一次只保留一个目标；画布必须保持打开。
 4. 切换到素材网页，在图片或视频上右键选择“发送到画布”，也可点击素材右上角出现的 Forge 图标。图标只在右键后出现，平时不显示；网站自定义菜单仍会保留。网页的链接覆盖图片时，插件会尝试识别该链接对应的唯一媒体；无法确定媒体时请改用面板选取。
@@ -18,6 +18,8 @@
 面板顶部的 Forge 图标可打开 [Forge 首页](https://forge.art/)。未设置接收画布时，媒体右键菜单显示“打开 Forge”，右键后出现的媒体图标也会打开首页；设置接收画布后恢复发送，不会自动重发之前的素材。
 
 导入文件命名为 `FA Image <毫秒时间戳>` 或 `FA Video <毫秒时间戳>`，不带扩展名，画布节点沿用这个名称。
+
+图片和视频按原比例显示在面板中。视频交付后，可以点击缩略图在面板内播放最近一次交付的文件。视频缓存在本机，并在下一次素材交付或浏览器重启时清理。
 
 扩展在浏览器允许访问的网页中准备右键入口。安装时统一声明 HTTP(S) 网页访问权限，用于在播放器加载前准备视频；用户可在浏览器设置中限制网站访问。只有点击发送才向画布交付文件。自动准备视频单独控制，关闭它不会移除图片和视频的右键入口。浏览器限制了来源网站访问时，插件会按需请求恢复所需的访问权限。选中的媒体地址和目标画布信息暂存于浏览器会话中，导入成功后清除选中媒体。插件不要求单独登录，上传身份由目标画布页面提供。
 
@@ -88,7 +90,7 @@ npm run build
 npm run package
 ```
 
-`npm run build` 生成本地语言资源和视频组装 bundle；`npm run package` 会先构建，再生成 `dist/Forge-Anywhere-v1.0.22.zip`。ZIP 内为 `Forge-Anywhere/` 文件夹，只包含运行所需文件及使用说明、第三方许可证，不包含测试、依赖目录或 Git 历史。`package.json` 的 `private` 仅用于避免意外发布到 npm，与 GitHub 仓库可见性无关。
+`npm run build` 生成本地语言资源和视频组装 bundle；`npm run package` 会先构建，再生成 `dist/Forge-Anywhere-v1.0.23.zip`。ZIP 内为 `Forge-Anywhere/` 文件夹，只包含运行所需文件及使用说明、第三方许可证，不包含测试、依赖目录或 Git 历史。`package.json` 的 `private` 仅用于避免意外发布到 npm，与 GitHub 仓库可见性无关。
 
 本仓库是 Forge Anywhere 的唯一维护位置，Inkloom 中不再保留插件副本、兼容链接或配套接收代码。开发或本地安装时，在 Chrome 中加载本仓库根目录。由旧目录改为从新目录加载时，浏览器可能分配新的扩展 ID，需要重新设置语言、网站权限和接收画布。
 

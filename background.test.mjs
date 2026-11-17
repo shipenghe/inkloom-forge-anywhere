@@ -12,7 +12,7 @@ const imagePreflight = await readFile(
   new URL('./imagePreflight.js', import.meta.url),
   'utf8'
 )
-function fixture(mime = 'image/png', controller) {
+function fixture(mime = 'image/png', controller, playback) {
   let listener
   let installedListener
   let startupListener
@@ -365,6 +365,7 @@ function fixture(mime = 'image/png', controller) {
       recheck,
     }),
     inkloomMseController: controller,
+    ForgeVideoPlayback: playback,
     __inkloomMseRemux: {
       async remuxCapturedVideo() {
         return {
@@ -1716,6 +1717,35 @@ test('video uploads use the specified name without changing the MIME type', asyn
   assert.ok(match)
   assert.ok(Number(match[1]) >= before && Number(match[1]) <= Date.now())
   assert.equal(f.calls.find((call) => call.type === 'BEGIN').mime, 'video/mp4')
+})
+
+test('successful direct and page-local videos cache their delivered bytes for playback', async () => {
+  for (const source of [
+    'https://cdn.example.com/video.mp4',
+    'blob:https://example.com/video',
+  ]) {
+    let saved
+    const f = fixture('video/mp4', null, {
+      async replace(id, file) {
+        saved = { id, file }
+      },
+    })
+    await f.send({ kind: 'SET_TARGET', tabId: 1 })
+    await f.send({ kind: 'START_PICKER', tabId: 2 })
+    await f.send(
+      { kind: 'MEDIA_SELECTED', url: source, mediaKind: 'video' },
+      { id: 'test-id', tab: { id: 2 } }
+    )
+    const result = await f.send({ kind: 'IMPORT' })
+    assert.equal(result.ok, true, result.error)
+    await waitFor(() => f.storage.playableVideoId === saved?.id && saved)
+    assert.equal(saved.id, f.storage.mediaActivity.id)
+    assert.equal(saved.file.type, 'video/mp4')
+    assert.deepEqual(
+      Buffer.from(await saved.file.arrayBuffer()),
+      f.uploadBytes()
+    )
+  }
 })
 
 test('blob media uses the same naming rule', async () => {

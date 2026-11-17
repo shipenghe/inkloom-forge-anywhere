@@ -172,6 +172,34 @@
     return { ok, bridgeVersion, ...(error ? { error } : {}), ...extra }
   }
 
+  function encodePreview(width, height, draw) {
+    const scale = Math.min(1, 144 / Math.max(width, height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(width * scale))
+    canvas.height = Math.max(1, Math.round(height * scale))
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    draw(context, canvas.width, canvas.height)
+    const value = canvas.toDataURL('image/webp', 0.7)
+    return value.length <= 100_000 &&
+      /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)
+      ? value
+      : null
+  }
+
+  async function inspectFile(file) {
+    let video
+    if (file.type.startsWith('video/')) {
+      try {
+        video = await globalThis.__forgeInspectVideo?.(file, encodePreview)
+        if (video?.previewDataUrl) return video
+      } catch {
+        // The browser's native decoder can still be available.
+      }
+    }
+    return { ...video, ...(await previewFile(file)) }
+  }
+
   // A small, local-only preview of the file already being handed off. This is
   // best effort: decoding a large or unsupported file must never turn a drop
   // that was accepted by the canvas into a failed delivery.
@@ -232,21 +260,10 @@
             readDimensions()
             const { width, height } = dimensions
             if (!width || !height) return finish(null)
-            const scale = Math.min(1, 144 / Math.max(width, height))
-            const canvas = document.createElement('canvas')
-            canvas.width = Math.max(1, Math.round(width * scale))
-            canvas.height = Math.max(1, Math.round(height * scale))
-            const context = canvas.getContext('2d')
-            if (!context) return finish(null)
-            context.drawImage(media, 0, 0, canvas.width, canvas.height)
-            const value = canvas.toDataURL('image/webp', 0.7)
             finish(
-              value.length <= 100_000 &&
-                /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(
-                  value
-                )
-                ? value
-                : null
+              encodePreview(width, height, (context, w, h) =>
+                context.drawImage(media, 0, 0, w, h)
+              )
             )
           } catch {
             finish(null)
@@ -453,7 +470,7 @@
         // Reserve immediately, including when handling cannot be confirmed.
         // A delayed upload must not share its position with the next file.
         reservePlacement(placement)
-        const inspection = previewFile(file)
+        const inspection = inspectFile(file)
         watcher.check()
         return watcher.promise
           .then(async (handled) => {

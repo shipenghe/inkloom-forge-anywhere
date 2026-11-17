@@ -9,7 +9,7 @@ const source = await readFile(
   'utf8'
 )
 
-function fixture(preview = 'unavailable', { legacy = false } = {}) {
+function fixture(preview = 'unavailable', { legacy = false, inspect } = {}) {
   const listeners = []
   let version = '1.0.11'
   let legacyCalls = 0
@@ -138,6 +138,7 @@ function fixture(preview = 'unavailable', { legacy = false } = {}) {
   const context = vm.createContext({
     chrome,
     document,
+    __forgeInspectVideo: inspect,
     location,
     getComputedStyle: (element) =>
       element === viewport
@@ -276,6 +277,24 @@ test('preview failures, size limits and timeouts do not change confirmed deliver
     assert.equal(result.previewDataUrl, undefined)
     if (mode !== 'unavailable') assert.deepEqual(f.revoked, ['blob:preview'])
   }
+})
+
+test('video delivery can use a decoded file frame when the native player never loads', async () => {
+  const f = fixture('stall', {
+    async inspect(file, encodePreview) {
+      assert.equal(file.type, 'video/mp4')
+      assert.equal(await file.text(), 'a')
+      const previewDataUrl = encodePreview(1920, 1080, (_context, w, h) => {
+        assert.equal(w, 144)
+        assert.equal(h, 81)
+      })
+      return { width: 1920, height: 1080, previewDataUrl }
+    },
+  })
+  const result = await deliverPreview(f, 'video/mp4')
+  assert.equal(result.delivered, true)
+  assert.equal(result.previewDataUrl, 'data:image/webp;base64,YQ==')
+  assert.equal(f.previewElements.length, 0)
 })
 
 test('a bound transfer delivers the original bytes as a file drop', async () => {

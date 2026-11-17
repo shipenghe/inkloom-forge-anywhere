@@ -9,6 +9,8 @@ await build({
   format: 'iife',
   platform: 'browser',
   target: ['chrome110'],
+  // Emit escaped shader strings so generated bundles contain no blank-line tabs.
+  supported: { 'template-literal': false },
   minify: true,
   legalComments: 'none',
   banner: {

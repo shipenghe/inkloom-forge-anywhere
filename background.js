@@ -13,13 +13,15 @@ if (typeof importScripts === 'function')
     'mseCaptureController.js',
     'hoverMediaController.js',
     'mseRemux.bundle.js',
-    'releaseUpdates.js'
+    'releaseUpdates.js',
+    'videoPlayback.js'
   )
 const t = (value) => globalThis.ForgeI18n?.text(value) ?? value
 void globalThis.inkloomMseController?.recover().catch(() => {})
 void globalThis.forgeMediaEntryController?.recover().catch(() => {})
 let transfer = null
 let targetGeneration = 0
+let videoPlaybackWrite = Promise.resolve()
 const weiboMediaRuleCleanup = chrome.declarativeNetRequest
   ?.updateSessionRules({ removeRuleIds: [WEIBO_MEDIA_RULE_ID] })
   .catch(() => {})
@@ -35,10 +37,26 @@ async function state() {
     'mseCapture',
     'lastDelivery',
     'mediaActivity',
+    'playableVideoId',
   ])
 }
 async function save(value) {
   return chrome.storage.session.set(value)
+}
+function storeVideoPlayback(id, file) {
+  if (!globalThis.ForgeVideoPlayback) return
+  videoPlaybackWrite = videoPlaybackWrite
+    .then(async () => {
+      let playableVideoId = null
+      try {
+        await globalThis.ForgeVideoPlayback.replace(id, file)
+        if (file) playableVideoId = id
+      } catch {
+        // A local storage error must never change a successful delivery.
+      }
+      await save({ playableVideoId })
+    })
+    .catch(() => {})
 }
 function safePreview(value) {
   return (
@@ -480,6 +498,22 @@ async function beginTransfer(t, size, mime) {
 async function abortTransfer(t) {
   if (t?.begun) await sendTarget(t.target, 'ABORT', t.id).catch(() => {})
 }
+async function deliverBlob(t, blob, mime = blob.type) {
+  await beginTransfer(t, blob.size, mime)
+  let sequence = 0
+  for (let start = 0; start < blob.size; start += CHUNK_SIZE) {
+    const bytes = new Uint8Array(
+      await blob.slice(start, start + CHUNK_SIZE).arrayBuffer()
+    )
+    await sendTarget(t.target, 'CHUNK', t.id, {
+      sequence: sequence++,
+      data: encode(bytes),
+    })
+  }
+  const result = await sendTarget(t.target, 'END', t.id)
+  if (t.selection.mediaKind === 'video') t.playbackFile = blob
+  return result
+}
 async function boundedBlob(response, mediaKind) {
   const declared = Number(response.headers.get('content-length'))
   if (declared > MAX_TRANSFER_SIZE) throw new Error('媒体文件过大，无法导入')
@@ -901,18 +935,7 @@ async function importCapturedVideo(t, capture) {
       : {}),
   }
   await updateActivity(t.selection.mediaId, t.clipRange).catch(() => {})
-  await beginTransfer(t, clip.blob.size, 'video/mp4')
-  let sequence = 0
-  for (let offset = 0; offset < clip.blob.size; offset += CHUNK_SIZE) {
-    const bytes = new Uint8Array(
-      await clip.blob.slice(offset, offset + CHUNK_SIZE).arrayBuffer()
-    )
-    await sendTarget(t.target, 'CHUNK', t.id, {
-      sequence: sequence++,
-      data: encode(bytes),
-    })
-  }
-  await sendTarget(t.target, 'END', t.id)
+  await deliverBlob(t, clip.blob, 'video/mp4')
   return clip.hasAudio
 }
 async function tryDisplayedImage(selection, t) {
@@ -962,7 +985,6 @@ async function runImport(contextSelection, existingTransfer) {
     const target = await currentTarget()
     t.target = target
     t.selection = selection
-    let result
     let clipHasAudio
     if (selection.mse) {
       const capture = (await state()).mseCapture
@@ -978,6 +1000,7 @@ async function runImport(contextSelection, existingTransfer) {
     } else if (await tryDisplayedImage(selection, t)) {
       // The page exported the selected, already decoded pixels as a PNG.
     } else if (selection.url.startsWith('blob:')) {
+      let result
       try {
         result = await chrome.tabs.sendMessage(
           selection.tabId,
@@ -1011,19 +1034,7 @@ async function runImport(contextSelection, existingTransfer) {
           completeError = error
         }
         if (blob) {
-          await beginTransfer(t, blob.size, blob.type)
-          let sequence = 0
-          for (let start = 0; start < blob.size; start += CHUNK_SIZE) {
-            const bytes = new Uint8Array(
-              await blob.slice(start, start + CHUNK_SIZE).arrayBuffer()
-            )
-            await sendTarget(target, 'CHUNK', t.id, {
-              sequence,
-              data: encode(bytes),
-            })
-            sequence += 1
-          }
-          result = await sendTarget(target, 'END', t.id)
+          await deliverBlob(t, blob)
         } else {
           const capture = await automaticCaptureFor(selection)
           if (!capture) {
@@ -1091,19 +1102,7 @@ async function runImport(contextSelection, existingTransfer) {
       }
       if (selection.mediaKind === 'image')
         await globalThis.__inkloomImagePreflight.validate(blob)
-      await beginTransfer(t, blob.size, blob.type)
-      let sequence = 0
-      for (let start = 0; start < blob.size; start += CHUNK_SIZE) {
-        const bytes = new Uint8Array(
-          await blob.slice(start, start + CHUNK_SIZE).arrayBuffer()
-        )
-        await sendTarget(target, 'CHUNK', t.id, {
-          sequence,
-          data: encode(bytes),
-        })
-        sequence += 1
-      }
-      result = await sendTarget(target, 'END', t.id)
+      await deliverBlob(t, blob)
     }
     if (!contextSelection || (selection.mse && !t.autoCapture))
       await save({
@@ -1135,6 +1134,7 @@ async function runImport(contextSelection, existingTransfer) {
       }),
       message: '已交给画布',
     }).catch(() => {})
+    storeVideoPlayback(selection.mediaId, t.playbackFile)
     return {
       ok: true,
       message: `${type}已交给画布${
@@ -1737,6 +1737,8 @@ async function handle(message, sender) {
       throw new Error('来源页面已失效')
     if (message.kind === 'BLOB_META') {
       await beginTransfer(t, message.size, message.mime)
+      if (t.selection.mediaKind === 'video' && globalThis.ForgeVideoPlayback)
+        t.playbackChunks = []
       return { ok: true }
     }
     if (message.kind === 'BLOB_CHUNK') {
@@ -1744,11 +1746,32 @@ async function handle(message, sender) {
         sequence: message.sequence,
         data: message.data,
       })
+      if (t.playbackChunks) {
+        try {
+          const decoded = atob(message.data)
+          const chunk = new Uint8Array(decoded.length)
+          for (let i = 0; i < chunk.length; i++)
+            chunk[i] = decoded.charCodeAt(i)
+          t.playbackChunks.push(chunk)
+        } catch {
+          t.playbackChunks = null
+        }
+      }
       return { ok: true }
     }
-    if (message.kind === 'BLOB_END') return sendTarget(t.target, 'END', t.id)
+    if (message.kind === 'BLOB_END') {
+      const result = await sendTarget(t.target, 'END', t.id)
+      if (t.playbackChunks) {
+        try {
+          t.playbackFile = new Blob(t.playbackChunks, { type: t.mime })
+        } catch {}
+      }
+      t.playbackChunks = null
+      return result
+    }
     if (message.kind === 'BLOB_FAIL') {
       await abortTransfer(t)
+      t.playbackChunks = null
       t.begun = false
       return { ok: true }
     }
@@ -1808,7 +1831,12 @@ async function handle(message, sender) {
     try {
       injected = await chrome.scripting.executeScript({
         target: { tabId: tab.id, frameIds: [0] },
-        files: ['i18n-data.js', 'i18n.js', 'dropBridge.js'],
+        files: [
+          'i18n-data.js',
+          'i18n.js',
+          'mseRemux.bundle.js',
+          'dropBridge.js',
+        ],
       })
     } catch {
       throw new Error('无法连接画布，请刷新画布后重新设置')
@@ -1910,6 +1938,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   void globalThis.forgeMediaEntryController?.recover().catch(() => {})
+  storeVideoPlayback()
   // Chrome groups multiple registered items even if only one is visible.
   // Remove the previous version's entries, then keep one changing action.
   chrome.contextMenus.removeAll(() => {
@@ -1930,6 +1959,7 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 chrome.runtime.onStartup.addListener(() => {
   void globalThis.forgeMediaEntryController?.recover().catch(() => {})
+  storeVideoPlayback()
   targetGeneration++
   void save({ target: null }).then(refreshContextMenu)
 })
