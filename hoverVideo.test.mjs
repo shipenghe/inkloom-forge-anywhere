@@ -3,6 +3,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 
+const fallback = readFileSync(
+  new URL('./mediaFallback.js', import.meta.url),
+  'utf8'
+)
 const code = readFileSync(new URL('./hoverVideo.js', import.meta.url), 'utf8')
 
 async function fixture({ enabled = true, hasTarget = true } = {}) {
@@ -55,6 +59,8 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
   `,
     ctx
   )
+  ctx.location = { hostname: 'fixture.test' }
+  vm.runInContext(fallback, ctx)
   vm.runInContext(code, ctx)
   await new Promise((resolve) => setImmediate(resolve))
   return { ctx, run: (source) => vm.runInContext(source, ctx) }
@@ -806,4 +812,24 @@ test('pending video feedback survives source replacement and reports a delayed f
     { id: 'test-id' },
     () => {}
   )
+})
+
+test('right-click sends the video from a nested open shadow player', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.player=new Element('demo-player'); document.body.append(player)
+    const inner=new Element('demo-video'); player.shadowRoot=player.attachShadow(); player.shadowRoot.append(inner)
+    inner.shadowRoot=inner.attachShadow(); inner.shadowRoot.append(Object.assign(new HTMLVideoElement('https://cdn.example/shadow.mp4'), {
+      readyState:4,videoWidth:1920,videoHeight:1080
+    }))
+    player.shadowRoot.querySelectorAll=()=>[inner]
+    inner.shadowRoot.querySelectorAll=()=>inner.shadowRoot.children
+  `)
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.player))
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  await f.ctx.created[2].listeners.click(f.ctx.clickFor())
+  const sent = f.ctx.sent.find((message) => message.kind === 'HOVER_MEDIA_SEND')
+  assert.equal(sent?.mediaKind, 'video')
+  assert.equal(sent?.url, 'https://cdn.example/shadow.mp4')
+  f.ctx.__forgeHoverVideoCleanup()
 })

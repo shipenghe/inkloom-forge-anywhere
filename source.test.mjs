@@ -218,6 +218,32 @@ test('video preview uses only the already decoded current frame of the exact vid
   assert.equal(f.sent.length, 0)
 })
 
+test('video preview and duration use the selected element even outside the document query', async () => {
+  const url = 'https://example.com/shadow-video.mp4'
+  const video = {
+    currentSrc: url,
+    isConnected: true,
+    readyState: 2,
+    videoWidth: 1080,
+    videoHeight: 1920,
+    duration: 15,
+  }
+  const canvas = {
+    getContext: () => ({ drawImage: (value) => assert.equal(value, video) }),
+    toDataURL: () => 'data:image/webp;base64,YQ==',
+  }
+  const f = previewFixture({ canvas, globals: { __inkloomSelectedVideo: video } })
+  const result = await f.readPreview({ url, mediaKind: 'video' })
+  assert.equal(result.previewDataUrl, 'data:image/webp;base64,YQ==')
+  assert.equal(result.duration, 15)
+  assert.deepEqual(f.requested, [])
+
+  video.currentSrc = url + '?changed'
+  const stale = await f.readPreview({ url, mediaKind: 'video' })
+  assert.equal(stale.duration, undefined)
+  assert.deepEqual(f.requested, ['video'])
+})
+
 test('only the selected QQ Music audio supplies its trial or listed track duration', async () => {
   const url = 'blob:https://y.qq.com/selected-audio'
   const attrs = new Map([

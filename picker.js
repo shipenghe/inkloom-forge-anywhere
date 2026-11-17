@@ -47,7 +47,7 @@
     for (
       let node = element;
       node instanceof Element;
-      node = node.parentElement
+      node = node.parentElement || node.getRootNode?.().host
     ) {
       const style = getComputedStyle(node)
       if (
@@ -72,6 +72,13 @@
       const direct = node.closest('img, video, audio')
       if (direct && visibleAt(direct, x, y)) return { element: direct }
     }
+    const video = globalThis.__inkloomMediaFallback?.coveredVideo?.(
+      path,
+      x,
+      y,
+      visibleAt
+    )
+    if (video) return video
     const player = globalThis.__inkloomMediaFallback?.audioPlayer?.(origin)
     if (player && visibleAt(player.anchor, x, y)) return player
     const covered = globalThis.__inkloomMediaFallback?.coveredImage?.(
@@ -240,6 +247,7 @@
     }
     try {
       if (kind === 'image') globalThis.__inkloomSelectedImage = element
+      if (kind === 'video') globalThis.__inkloomSelectedVideo = element
       const result = await chrome.runtime.sendMessage({
         kind: 'MEDIA_SELECTED',
         url,

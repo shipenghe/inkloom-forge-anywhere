@@ -1264,12 +1264,13 @@ async function contextSelection(info, tab) {
   }
   // A previous picker selection may point at a different element with the
   // same URL. Context menus provide no clicked element identity, so discard it
-  // and only export when the URL identifies one unambiguous image.
+  // when resolving the native menu selection by URL.
   try {
     await chrome.scripting.executeScript({
       target,
       func: () => {
         delete globalThis.__inkloomSelectedImage
+        delete globalThis.__inkloomSelectedVideo
       },
     })
   } catch {}

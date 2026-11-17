@@ -226,6 +226,123 @@
     )
   }
 
+  function opaqueBackdrop(style) {
+    const background = style.backgroundImage
+    let opacity = 0
+    if (background && background !== 'none') {
+      // Only computed gradients with explicit alpha colors can be transparent.
+      // Image URLs and unknown paint functions block selection.
+      const functions = [...background.matchAll(/([\w-]+)\(/g)].map(
+        (match) => match[1]
+      )
+      const gradients = functions.filter((name) =>
+        /^(?:repeating-)?(?:linear|radial|conic)-gradient$/.test(name)
+      ).length
+      const colors = [...background.matchAll(/rgba\([^()]*,\s*([\d.]+)\s*\)/g)]
+      if (
+        !gradients ||
+        !colors.length ||
+        functions.length !== gradients + colors.length
+      )
+        return true
+      const maxAlpha = Math.max(...colors.map((match) => Number(match[1])))
+      // Use the most opaque stop as a bound for every layer. Stacked gradients
+      // can hide an image even when each individual gradient is translucent.
+      opacity = 1 - (1 - maxAlpha) ** gradients
+    }
+    const color = style.backgroundColor
+    if (color && color !== 'transparent') {
+      const rgba = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)$/i)
+      if (rgba) opacity = 1 - (1 - opacity) * (1 - Number(rgba[1]))
+      else return true
+    }
+    return opacity >= 0.95
+  }
+  function readyVideo(element) {
+    return (
+      element.tagName === 'VIDEO' &&
+      element.readyState >= 2 &&
+      element.videoWidth > 0 &&
+      element.videoHeight > 0 &&
+      !element.error &&
+      !element.mediaKeys &&
+      /^(https?:|blob:)/i.test(element.currentSrc)
+    )
+  }
+
+  function shadowVideo(path, x, y, visibleAt) {
+    // Inspect open roots on the event path. A nested player can keep its
+    // native video beside the controls, outside the control's event path.
+    for (const host of path) {
+      if (!host.shadowRoot || !visibleAt(host, x, y)) continue
+      const bounds = host.getBoundingClientRect()
+      const candidates = []
+      let budget = 500
+      function collect(root, depth) {
+        for (const element of root.querySelectorAll('*')) {
+          if (--budget < 0 || candidates.length > 1) return
+          if (
+            readyVideo(element) &&
+            sameBounds(element.getBoundingClientRect(), bounds) &&
+            visibleAt(element, x, y)
+          )
+            candidates.push(element)
+          if (depth < 4 && element.shadowRoot)
+            collect(element.shadowRoot, depth + 1)
+        }
+      }
+      collect(host.shadowRoot, 1)
+      if (budget < 0 || candidates.length > 1)
+        return { element: null, ambiguous: true }
+      if (candidates.length === 1) return { element: candidates[0] }
+    }
+    return null
+  }
+
+  function coveredVideo(path, x, y, visibleAt) {
+    const shadow = shadowVideo(path, x, y, visibleAt)
+    if (shadow) return shadow
+
+    // Some players put a full-size play/pause button over a sibling video.
+    // Require both the same player bounds and a hit stack through that control.
+    const control = path.find((node) =>
+      node.matches?.('button, [role="button"]')
+    )
+    if (!control || !visibleAt(control, x, y)) return null
+    const bounds = control.getBoundingClientRect()
+    const stack = document.elementsFromPoint?.(x, y) || []
+    const videos = stack.filter(
+      (node) =>
+        readyVideo(node) &&
+        sameBounds(node.getBoundingClientRect(), bounds) &&
+        visibleAt(node, x, y) &&
+        path.some(
+          (ancestor) =>
+            ancestor !== document.body &&
+            ancestor !== document.documentElement &&
+            ancestor.getBoundingClientRect &&
+            ancestor.contains(node) &&
+            sameBounds(ancestor.getBoundingClientRect(), bounds)
+        )
+    )
+    if (videos.length > 1) return { element: null, ambiguous: true }
+    const [element] = videos
+    if (!element) return null
+    const index = stack.indexOf(element)
+    const controlIndex = stack.indexOf(control)
+    if (controlIndex < 0 || controlIndex >= index) return null
+    if (
+      stack.slice(0, index).some(
+        (layer) =>
+          !layer.contains(element) &&
+          (layer.matches('img, video, audio, canvas, iframe') ||
+            opaqueBackdrop(getComputedStyle(layer)))
+      )
+    )
+      return null
+    return { element }
+  }
+
   function coveredImage(origin, x, y, visibleAt) {
     const container = origin?.parentElement
     if (
@@ -297,5 +414,11 @@
       : { element: null, ambiguous: true }
   }
 
-  globalThis.__inkloomMediaFallback = { imageUrl, audioPlayer, coveredImage }
+  globalThis.__inkloomMediaFallback = {
+    imageUrl,
+    audioPlayer,
+    coveredImage,
+    coveredVideo,
+    opaqueBackdrop,
+  }
 })()

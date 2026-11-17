@@ -3,6 +3,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 
+const fallback = readFileSync(
+  new URL('./mediaFallback.js', import.meta.url),
+  'utf8'
+)
 const code = readFileSync(new URL('./picker.js', import.meta.url), 'utf8')
 
 function fixture() {
@@ -18,6 +22,8 @@ function fixture() {
       remove() { this.isConnected=false }
       matches(selector) {
         if (selector === 'img, video, audio') return ['img', 'video', 'audio'].includes(this.tag)
+        if (selector === 'button, [role="button"]') return this.tag === 'button' || this.role === 'button'
+        if (selector === 'img, video, audio, canvas, iframe') return ['img','video','audio','canvas','iframe'].includes(this.tag)
         if (selector === 'a, button, [role="link"], [role="button"]') return this.tag === 'a' || this.tag === 'button'
         if (selector === 'dialog, [role="dialog"], [aria-modal="true"]') return this.tag === 'dialog'
         return false
@@ -46,12 +52,14 @@ function fixture() {
       elementsFromPoint() {return hits}
     }
     globalThis.chrome = {runtime:{sendMessage:async msg => {sent.push(msg); return {ok:true}}}}
-    globalThis.__inkloomMediaFallback = {imageUrl: element=>element.url}
     globalThis.__inkloomVideoCandidates = {videoCandidates:()=>[]}
     globalThis.makeEvent = target => ({target,clientX:50,clientY:50,preventDefault(){},stopImmediatePropagation(){}, composedPath(){const path=[]; for(let node=target;node;node=node.parentElement) path.push(node);return path}})
   `,
     ctx
   )
+  ctx.location = { hostname: 'fixture.test' }
+  vm.runInContext(fallback, ctx)
+  ctx.__inkloomMediaFallback.imageUrl = (element) => element.url
   vm.runInContext(code, ctx)
   return {
     run: (source) => vm.runInContext(source, ctx),
@@ -158,4 +166,21 @@ test('direct video hit retains video selection and Escape cancels', async () => 
   await g.ctx.listeners.keydown({ key: 'Escape' })
   assert.equal(g.ctx.sent[0].kind, 'PICKER_CANCEL')
   assert.equal(g.ctx.listeners.click, undefined)
+})
+
+test('picker selects a decoded video beneath its translucent full-size play control', async () => {
+  const f = fixture()
+  f.run(`
+    globalThis.card = new Element('div'); globalThis.overlay = new Element('div'); overlay.role='button';
+    overlay.style.backgroundImage='linear-gradient(0deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0))';
+    const video = Object.assign(new HTMLVideoElement(), {readyState:4,videoWidth:1080,videoHeight:1920});
+    const playerControls = new Element('div'); const videoContainer = new Element('div');
+    playerControls.append(overlay); videoContainer.append(video); card.append(videoContainer,playerControls); app.append(card)
+    hits=[overlay,playerControls,video,videoContainer,card,app,document.body];
+  `)
+  f.move(f.ctx.overlay)
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  await f.click(f.ctx.overlay)
+  assert.equal(f.ctx.sent[0]?.url, 'https://video.example/test.mp4')
+  assert.equal(f.ctx.sent[0]?.mediaKind, 'video')
 })

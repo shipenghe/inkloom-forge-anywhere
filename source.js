@@ -21,7 +21,11 @@
       if (typeof url !== 'string' || !url) return result
       const matches = (element) =>
         element?.isConnected && (element.currentSrc || element.src) === url
-      let media = image ? globalThis.__inkloomSelectedImage : null
+      let media = image
+        ? globalThis.__inkloomSelectedImage
+        : audio
+        ? null
+        : globalThis.__inkloomSelectedVideo
       if (!matches(media)) {
         const candidates = [
           ...document.querySelectorAll(image ? 'img' : message.mediaKind),
