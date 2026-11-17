@@ -169,6 +169,63 @@ function fixture({
   return { select: () => context.__inkloomMediaFallback.imageUrl(image), image }
 }
 
+test('a transparent full-slide control targets the fitted photo above its backdrop', () => {
+  const rect = (left, top, width, height) => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  })
+  const slide = rect(0, 0, 664, 633)
+  const photo = {
+    complete: true,
+    naturalWidth: 2132,
+    naturalHeight: 4096,
+    currentSrc: 'https://example.test/photo.jpg',
+    getBoundingClientRect: () => rect(180, 24, 304.5, 585),
+  }
+  const backdrop = {
+    ...photo,
+    currentSrc: 'https://example.test/backdrop.jpg',
+    getBoundingClientRect: () => slide,
+  }
+  const images = [backdrop, photo]
+  const videos = []
+  const container = {
+    getBoundingClientRect: () => slide,
+    querySelectorAll: (selector) => (selector === 'video' ? videos : images),
+  }
+  const button = {
+    tagName: 'BUTTON',
+    parentElement: container,
+    getBoundingClientRect: () => slide,
+  }
+  const style = { backgroundColor: 'rgba(0, 0, 0, 0)', backgroundImage: 'none' }
+  const context = vm.createContext({
+    document: {},
+    innerWidth: 1100,
+    innerHeight: 800,
+    getComputedStyle: () => style,
+  })
+  vm.runInContext(sourceCode, context)
+  const find = () =>
+    context.__inkloomMediaFallback.coveredImage(button, 330, 300, () => true)
+  assert.equal(find().element, photo)
+  photo.complete = false
+  assert.equal(find().element, null)
+  photo.complete = true
+  images.push({ ...photo })
+  assert.equal(find().ambiguous, true)
+  images.pop()
+  videos.push({ readyState: 2 })
+  assert.equal(find(), null)
+  videos.pop()
+  style.backgroundColor = 'rgb(255, 255, 255)'
+  assert.equal(find(), null)
+})
+
 test('chooses the same Bilibili picture WebP source when AVIF was selected', () => {
   const f = fixture({
     sources: [

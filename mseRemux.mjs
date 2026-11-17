@@ -218,6 +218,10 @@ async function readPackets(track, timing) {
         ? '播放窗口内没有可用关键帧，无法组装视频片段'
         : '播放窗口内没有完整音频数据，无法组装视频片段'
     )
+  return { packets, ...packetRange(packets) }
+}
+
+function packetRange(packets) {
   const timeline = packets
     .map((p) => ({ start: p.timestamp, end: p.timestamp + p.duration }))
     .sort((a, b) => a.start - b.start)
@@ -227,7 +231,39 @@ async function readPackets(track, timing) {
       throw new Error('视频片段不连续，请重新采集')
     end = Math.max(end, item.end)
   }
-  return { packets, start: timeline[0].start, end }
+  return { start: timeline[0].start, end }
+}
+
+function trimVideoToAudio(video, audio) {
+  if (
+    !audio ||
+    (video.start >= audio.start - AUDIO_SYNC_TOLERANCE &&
+      video.end <= audio.end + AUDIO_SYNC_TOLERANCE)
+  )
+    return video
+
+  // Audio and video can buffer at different rates. Retain a prefix in decode
+  // order, beginning at a real keyframe within the shared buffered time.
+  const packets = []
+  let start
+  for (const packet of video.packets) {
+    if (start === undefined) {
+      if (
+        packet.type !== 'key' ||
+        packet.timestamp < audio.start - AUDIO_SYNC_TOLERANCE
+      )
+        continue
+      start = packet.timestamp
+    }
+    if (
+      packet.timestamp < start ||
+      packet.timestamp + packet.duration > audio.end + AUDIO_SYNC_TOLERANCE
+    )
+      break
+    packets.push(packet)
+  }
+  if (!packets.length) throw new Error('音视频片段时间范围不一致，请重新采集')
+  return { packets, ...packetRange(packets) }
 }
 
 /**
@@ -269,24 +305,20 @@ export async function remuxCapturedVideo(
       audio = audios[0]?.track
     if (!video.codec || (audio && !audio.codec))
       throw new Error('暂不支持此音视频编码')
-    const [videoData, audioData, videoConfig, audioConfig] = await Promise.all([
-      readPackets(video, videos[0].timing),
-      audio ? readPackets(audio, audios[0].timing) : null,
-      video.getDecoderConfig(),
-      audio ? audio.getDecoderConfig() : null,
-    ])
+    const [capturedVideo, audioData, videoConfig, audioConfig] =
+      await Promise.all([
+        readPackets(video, videos[0].timing),
+        audio ? readPackets(audio, audios[0].timing) : null,
+        video.getDecoderConfig(),
+        audio ? audio.getDecoderConfig() : null,
+      ])
     if (
       !videoConfig ||
       (audio && !audioConfig) ||
-      videoData.packets[0].type !== 'key'
+      capturedVideo.packets[0].type !== 'key'
     )
       throw new Error('缺少初始化数据或关键帧，无法组装视频片段')
-    if (
-      audioData &&
-      (audioData.start > videoData.start + AUDIO_SYNC_TOLERANCE ||
-        audioData.end < videoData.end - AUDIO_SYNC_TOLERANCE)
-    )
-      throw new Error('音视频片段时间范围不一致，请重新采集')
+    const videoData = trimVideoToAudio(capturedVideo, audioData)
     // Retain only audio packets that overlap the video interval; otherwise an
     // earlier audio buffer can add a long lead-in before the first video frame.
     const alignedAudio = audioData && {

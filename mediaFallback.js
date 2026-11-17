@@ -220,5 +220,82 @@
     return qqMusicAudio(origin)
   }
 
-  globalThis.__inkloomMediaFallback = { imageUrl, audioPlayer }
+  function sameBounds(first, second) {
+    return ['left', 'top', 'right', 'bottom'].every(
+      (edge) => Math.abs(first[edge] - second[edge]) <= 1
+    )
+  }
+
+  function coveredImage(origin, x, y, visibleAt) {
+    const container = origin?.parentElement
+    if (
+      origin?.tagName !== 'BUTTON' ||
+      !container ||
+      container === document.body ||
+      container === document.documentElement
+    )
+      return null
+    const bounds = container.getBoundingClientRect()
+    if (
+      bounds.width * bounds.height > innerWidth * innerHeight * 2 ||
+      !sameBounds(origin.getBoundingClientRect(), bounds)
+    )
+      return null
+    const { backgroundColor, backgroundImage } = getComputedStyle(origin)
+    if (
+      (backgroundColor &&
+        !['transparent', 'rgba(0, 0, 0, 0)'].includes(backgroundColor)) ||
+      (backgroundImage && backgroundImage !== 'none')
+    )
+      return null
+    if (
+      [...container.querySelectorAll('video')].some(
+        (video) => video.readyState >= 2 && visibleAt(video, x, y)
+      )
+    )
+      return null
+    const images = [...container.querySelectorAll('img')].filter((image) =>
+      visibleAt(image, x, y)
+    )
+    if (!images.length) return null
+    if (
+      images.some(
+        (image) =>
+          !image.complete || !image.naturalWidth || !image.naturalHeight
+      )
+    )
+      return { element: null }
+
+    const foreground = images.filter((image) => {
+      const rect = image.getBoundingClientRect()
+      return (
+        !sameBounds(rect, bounds) &&
+        Math.abs(
+          (rect.width * image.naturalHeight) /
+            (rect.height * image.naturalWidth) -
+            1
+        ) < 0.05
+      )
+    })
+    // A fitted photo can share its slide with a full-size backdrop. Only
+    // prefer it when all other candidates fill that same slide.
+    if (
+      foreground.length === 1 &&
+      images.every(
+        (image) =>
+          image === foreground[0] ||
+          sameBounds(image.getBoundingClientRect(), bounds)
+      )
+    )
+      return { element: foreground[0] }
+
+    const [first] = images
+    const url = first.currentSrc || first.src
+    return url &&
+      images.every((image) => (image.currentSrc || image.src) === url)
+      ? { element: first }
+      : { element: null, ambiguous: true }
+  }
+
+  globalThis.__inkloomMediaFallback = { imageUrl, audioPlayer, coveredImage }
 })()

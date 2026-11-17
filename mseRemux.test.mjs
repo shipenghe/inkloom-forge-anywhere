@@ -91,6 +91,53 @@ test('reports a video-only result, and refuses it when the caller expects audio'
   )
 })
 
+test('uses the shared interval when video buffers past the end of the audio', async () => {
+  const result = await remuxCapturedVideo(
+    [stream('video', video), { ...stream('audio', audio), appendWindowEnd: 4 }],
+    { requireAudio: true }
+  )
+  const output = open(new Uint8Array(await result.blob.arrayBuffer()))
+  try {
+    const outVideo = await output.getPrimaryVideoTrack()
+    const outAudio = await output.getPrimaryAudioTrack()
+    assert.equal(
+      (await new EncodedPacketSink(outVideo).getFirstPacket()).type,
+      'key'
+    )
+    assert.ok(
+      result.sourceStart < 1 &&
+        result.sourceEnd > 3.5 &&
+        result.sourceEnd <= 4.15
+    )
+    assert.ok(
+      Math.abs(
+        (await outVideo.computeDuration()) - (await outAudio.computeDuration())
+      ) < 0.16
+    )
+  } finally {
+    output.dispose()
+  }
+})
+
+test('starts on the next keyframe when audio begins late and rejects disjoint tracks', async () => {
+  const result = await remuxCapturedVideo(
+    [
+      stream('video', video),
+      { ...stream('audio', audio), appendWindowStart: 2 },
+    ],
+    { requireAudio: true }
+  )
+  assert.ok(result.sourceStart > 12 && result.sourceStart < 14)
+  assert.ok(result.duration > 1)
+  await assert.rejects(
+    remuxCapturedVideo([
+      { ...stream('video', video), appendWindowEnd: 4 },
+      { ...stream('audio', audio), appendWindowStart: 7 },
+    ]),
+    /音视频片段时间范围不一致/
+  )
+})
+
 test('rejects incomplete, oversized and clearly encrypted data', async () => {
   await assert.rejects(
     remuxCapturedVideo([stream('video', video.subarray(0, video.length - 1))]),

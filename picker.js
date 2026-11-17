@@ -74,6 +74,13 @@
     }
     const player = globalThis.__inkloomMediaFallback?.audioPlayer?.(origin)
     if (player && visibleAt(player.anchor, x, y)) return player
+    const covered = globalThis.__inkloomMediaFallback?.coveredImage?.(
+      origin,
+      x,
+      y,
+      visibleAt
+    )
+    if (covered) return covered
     // A full-card link or overlay can sit above a pointer-events:none image.
     // Inspect hit elements and their descendants, but never scan the document
     // root, and refuse overlapping candidates instead of choosing arbitrarily.

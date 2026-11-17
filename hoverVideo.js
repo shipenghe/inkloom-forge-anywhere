@@ -189,6 +189,13 @@
     if (!origin) return null
     const player = globalThis.__inkloomMediaFallback?.audioPlayer?.(origin)
     if (player && visibleAt(player.anchor, x, y, true)) return player
+    const covered = globalThis.__inkloomMediaFallback?.coveredImage?.(
+      origin,
+      x,
+      y,
+      visibleAt
+    )
+    if (covered) return covered
     const dialog = origin.closest(
       'dialog, [role="dialog"], [aria-modal="true"]'
     )
@@ -314,7 +321,7 @@
     if ((event.composedPath?.() || []).includes(host)) return
     lastPointer = { x: event.clientX, y: event.clientY }
     const hit = findMedia(event)
-    if (!hit) {
+    if (!hit?.element) {
       hide()
       return
     }
