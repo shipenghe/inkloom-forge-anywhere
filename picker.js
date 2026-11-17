@@ -6,7 +6,7 @@
   const outline = document.createElement('div')
   outline.style.cssText =
     'position:fixed;z-index:2147483647;pointer-events:none;display:none;border:3px solid #1a73e8;background:#1a73e822;box-sizing:border-box'
-  const pickerHint = '点击图片、视频或音频 · Esc 取消'
+  const pickerHint = '点击图片、视频或音频 · 右键或 Esc 取消'
   let hintMessage = pickerHint
   const hint = document.createElement('div')
   const setHint = (value) => {
@@ -169,6 +169,7 @@
     document.removeEventListener('pointermove', move, true)
     document.removeEventListener('click', click, true)
     document.removeEventListener('keydown', keydown, true)
+    window.removeEventListener('contextmenu', contextmenu, true)
     outline.remove()
     hint.remove()
     if (audioControlsStyle)
@@ -177,11 +178,18 @@
       )
     delete globalThis.__inkloomPickerCleanup
   }
+  function cancel() {
+    cleanup()
+    chrome.runtime.sendMessage({ kind: 'PICKER_CANCEL' }).catch(() => {})
+  }
   function keydown(event) {
-    if (event.key === 'Escape') {
-      cleanup()
-      chrome.runtime.sendMessage({ kind: 'PICKER_CANCEL' }).catch(() => {})
-    }
+    if (event.key === 'Escape') cancel()
+  }
+  function contextmenu(event) {
+    if (!event.isTrusted) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    cancel()
   }
   async function click(event) {
     event.preventDefault()
@@ -251,5 +259,6 @@
   document.addEventListener('pointermove', move, true)
   document.addEventListener('click', click, true)
   document.addEventListener('keydown', keydown, true)
+  window.addEventListener('contextmenu', contextmenu, true)
   globalThis.__inkloomPickerCleanup = cleanup
 })()

@@ -472,8 +472,8 @@
     "description": "浏览器未允许请求素材权限，请在插件中重新选择素材并授权"
   },
   "text_f2297a35a412": {
-    "message": "Click an image, video or audio player · Esc to cancel",
-    "description": "点击图片、视频或音频 · Esc 取消"
+    "message": "Click an image, video or audio player · Right-click or Esc to cancel",
+    "description": "点击图片、视频或音频 · 右键或 Esc 取消"
   },
   "text_908e56fe5ed8": {
     "message": "Clip",

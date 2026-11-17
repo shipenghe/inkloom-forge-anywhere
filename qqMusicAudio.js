@@ -1,4 +1,4 @@
-// Observe only MP3 responses that the QQ Music web player already fetched.
+// Observe MP3 and M4A responses that the QQ Music web player already fetched.
 ;(() => {
   if (
     location.hostname !== 'y.qq.com' ||
@@ -31,28 +31,36 @@
     track.blobUrl = null
   }
 
-  function streamUrl(input) {
+  function streamSource(input) {
     try {
       const value = input instanceof Request ? input.url : input
       if (typeof value !== 'string' && !(value instanceof URL)) return null
       const url = new URL(value, location.href)
+      const extension = url.pathname.match(/\.(mp3|m4a)$/i)?.[1].toLowerCase()
       return url.protocol === 'https:' &&
         /(?:^|\.)stream\.qqmusic\.qq\.com$/.test(url.hostname) &&
-        /\.mp3$/i.test(url.pathname)
-        ? url.href
+        extension
+        ? {
+            url: url.href,
+            mime: extension === 'm4a' ? 'audio/mp4' : 'audio/mpeg',
+          }
         : null
     } catch {
       return null
     }
   }
 
-  function range(response) {
+  function range(response, expectedMime) {
     const mime = response.headers
       .get('Content-Type')
       ?.split(';')[0]
       .toLowerCase()
       .trim()
-    if (mime !== 'audio/mpeg' && mime !== 'audio/mp3') return null
+    if (
+      mime !== expectedMime &&
+      !(mime === 'audio/mp3' && expectedMime === 'audio/mpeg')
+    )
+      return null
     const length = Number(response.headers.get('Content-Length'))
     if (!Number.isSafeInteger(length) || length <= 0 || length > maxBytes)
       return null
@@ -82,7 +90,7 @@
       new Blob(
         sorted.map((part) => part.blob),
         {
-          type: 'audio/mpeg',
+          type: track.mime,
         }
       )
     )
@@ -131,7 +139,7 @@
 
   async function observe(track, response) {
     if (capture !== track || track.audio || track.blocked) return
-    const part = range(response)
+    const part = range(response, track.mime)
     if (!part || response.url !== track.url) return
     if (track.total && track.total !== part.total) return
     if (
@@ -160,8 +168,8 @@
 
   window.fetch = function (input, ...args) {
     const result = Reflect.apply(nativeFetch, this, [input, ...args])
-    const url = streamUrl(input)
-    if (!url) return result
+    const source = streamSource(input)
+    if (!source) return result
     const info = songInfo()
     if (!info) return result
     if (
@@ -179,16 +187,16 @@
         attributes: true,
         attributeFilter: ['href'],
       })
-      capture = { ...info, url, observer, parts: new Map() }
+      capture = { ...info, ...source, observer, parts: new Map() }
     }
     const track = capture
-    if (track.url === url) {
+    if (track.url === source.url) {
       void result.then(
         (response) => observe(track, response),
         () => {}
       )
     } else if (!track.blocked) {
-      // Two different MP3s for the same visible song leave the source ambiguous.
+      // Two different streams for the same visible song leave the source ambiguous.
       track.blocked = true
       track.parts.clear()
       discardAudio(track)

@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.26
+# Forge Anywhere · v1.0.27
 
 Send inspiration to your canvas. Send images, videos and audio from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.26.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.27.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -21,6 +21,8 @@ Setting the destination again checks and updates the canvas connection script. O
 The Forge logo in the panel opens the [Forge homepage](https://forge.art/). Without a destination, the media context menu and the icon shown after right-clicking open Forge instead. Set a destination to send media; earlier clicks are not automatically replayed.
 
 If no entry appears, open the extension once on the media page, or use **Choose media** in its panel. An unplayed video thumbnail is treated as an image. Start the preview before right-clicking the card to send video. List previews may have lower resolution than the video on its playback page; open that page for higher quality or when the preview cannot be selected.
+
+Right-click or press Esc to exit **Choose media** mode.
 
 Translucent gradient overlays, including those on Pexels photos and video previews, are supported. Right-clicking keeps the site's own menu and shows the Forge icon. A decoded video preview over its cover is selected as video only when the hit stack confirms it is above that cover. Opaque covers and ambiguous overlaps are left unselected.
 
@@ -52,7 +54,7 @@ By default, Chinese browser languages—including Traditional Chinese—use Simp
 
 - The extension sends a media file through the canvas's existing file-drop upload flow. It does not save a source-page link as your canvas asset.
 - Audio support covers MP3, WAV, M4A, AAC, OGG and FLAC. The extension tries a page Blob or a complete same-origin cache entry before fetching the original file. Segmented audio streams are outside this flow.
-- In the QQ Music web player, start playback, then right-click the track information or progress bar. You can also use **Pick media** and click the playback bar. For MP3s loaded in byte ranges, Forge waits for the complete file, which may be a trial preview.
+- In the QQ Music web player, start playback, then right-click the track information or progress bar. You can also use **Pick media** and click the playback bar. For MP3s and M4As loaded in byte ranges, Forge waits for the complete file, which may be a trial preview.
 - Readable images are exported as PNG. If browser security rules prevent this, the extension may request source access and fetch the original file. Supported original image formats are static JPEG, PNG and WebP.
 - Media filenames are `FA Image <timestamp>`, `FA Video <timestamp>` or `FA Audio <timestamp>`, with no extension.
 - The destination must stay open. After refreshing it, navigating away, or reloading the extension, check and set the destination again as needed.
@@ -74,6 +76,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.26.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.27.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

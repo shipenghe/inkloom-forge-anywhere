@@ -68,11 +68,11 @@ function fixture(duration = 60) {
       link.pathname += '2'
       changeTrack()
     },
-    async load(start, bytes, url = stream) {
+    async load(start, bytes, url = stream, mime = 'audio/mpeg') {
       const waiting = new Response(bytes, {
         status: 206,
         headers: {
-          'Content-Type': 'audio/mpeg',
+          'Content-Type': mime,
           'Content-Length': String(bytes.length),
           'Content-Range': `bytes ${start}-${start + bytes.length - 1}/4`,
         },
@@ -112,4 +112,15 @@ test('does not join different streams or expose the full file underneath a trial
   trial.listeners.get('loadedmetadata')()
   assert.equal(trial.audio.attributes.has('data-forge-qq-song'), false)
   assert.equal(trial.audio.removed, true)
+})
+
+test('preserves the M4A format when joining the web player’s audio/mp4 ranges', async () => {
+  const f = fixture()
+  const m4a = stream.replace('.mp3', '.m4a')
+  await f.load(0, 'ab', m4a, 'audio/mpeg')
+  await f.load(2, 'cd', m4a, 'audio/mp4')
+  assert.equal(f.created.length, 0)
+  await f.load(0, 'ab', m4a, 'audio/mp4')
+  assert.equal(f.created[0].type, 'audio/mp4')
+  assert.equal(await f.created[0].text(), 'abcd')
 })

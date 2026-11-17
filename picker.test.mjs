@@ -33,7 +33,11 @@ function fixture() {
     const root = new Element('html', {left:0,top:0,right:1000,bottom:1000,width:1000,height:1000})
     const body = new Element('body', {left:0,top:0,right:1000,bottom:1000,width:1000,height:1000}); root.append(body)
     globalThis.app = new Element('div', {left:0,top:0,right:1000,bottom:1000,width:1000,height:1000}); body.append(app)
-    globalThis.listeners={}; globalThis.hits=[]; globalThis.sent=[]; globalThis.created=[];
+    globalThis.listeners={}; globalThis.windowListeners={}; globalThis.hits=[]; globalThis.sent=[]; globalThis.created=[];
+    globalThis.window={
+      addEventListener(type,fn){windowListeners[type]=fn},
+      removeEventListener(type,fn){if(windowListeners[type]===fn) delete windowListeners[type]}
+    };
     globalThis.document = {
       body, documentElement:root,
       createElement(tag) {const el=new Element(tag); created.push(el); return el},
@@ -59,7 +63,29 @@ function fixture() {
 
 test('shows a concise hint for selecting media', () => {
   const f = fixture()
-  assert.equal(f.ctx.created[1].textContent, '点击图片、视频或音频 · Esc 取消')
+  assert.equal(
+    f.ctx.created[1].textContent,
+    '点击图片、视频或音频 · 右键或 Esc 取消'
+  )
+})
+
+test('right-click exits selection before opening the page or Forge menu', () => {
+  const f = fixture()
+  const event = {
+    isTrusted: true,
+    preventDefault() {
+      this.prevented = true
+    },
+    stopImmediatePropagation() {
+      this.stopped = true
+    },
+  }
+  f.ctx.windowListeners.contextmenu(event)
+  assert.equal(event.prevented, true)
+  assert.equal(event.stopped, true)
+  assert.equal(f.ctx.sent[0].kind, 'PICKER_CANCEL')
+  assert.equal(f.ctx.listeners.click, undefined)
+  assert.equal(f.ctx.windowListeners.contextmenu, undefined)
 })
 
 test('selects the image beneath a link overlay even when the image cannot receive pointer events', async () => {
