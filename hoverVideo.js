@@ -187,7 +187,7 @@
     }
     const origin = path.find((node) => node instanceof Element)
     if (!origin) return null
-    const player = globalThis.__inkloomMediaFallback?.qqMusicAudio?.(origin)
+    const player = globalThis.__inkloomMediaFallback?.audioPlayer?.(origin)
     if (player && visibleAt(player.anchor, x, y, true)) return player
     const dialog = origin.closest(
       'dialog, [role="dialog"], [aria-modal="true"]'
@@ -342,7 +342,7 @@
     if (!media?.isConnected || (media.currentSrc || media.src) !== selectedUrl)
       return null
     if (!mediaControl) return media
-    const player = globalThis.__inkloomMediaFallback.qqMusicAudio(mediaControl)
+    const player = globalThis.__inkloomMediaFallback.audioPlayer(mediaControl)
     return player?.element === media ? player.anchor : null
   }
   function updatePosition() {

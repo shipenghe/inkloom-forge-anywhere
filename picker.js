@@ -72,7 +72,7 @@
       const direct = node.closest('img, video, audio')
       if (direct && visibleAt(direct, x, y)) return { element: direct }
     }
-    const player = globalThis.__inkloomMediaFallback?.qqMusicAudio?.(origin)
+    const player = globalThis.__inkloomMediaFallback?.audioPlayer?.(origin)
     if (player && visibleAt(player.anchor, x, y)) return player
     // A full-card link or overlay can sit above a pointer-events:none image.
     // Inspect hit elements and their descendants, but never scan the document

@@ -66,7 +66,7 @@ test('anchors audio to the QQ Music bar and refuses a changed track', async () =
     globalThis.bar=new Element('div'); document.body.append(bar)
     globalThis.track=new Element('audio'); track.currentSrc='https://cdn.example/one.mp3'
     document.body.append(track)
-    globalThis.__inkloomMediaFallback={qqMusicAudio: el=>el===bar ? {element:track,anchor:bar,control:bar} : null}
+    globalThis.__inkloomMediaFallback={audioPlayer: el=>el===bar ? {element:track,anchor:bar,control:bar} : null}
   `)
   await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.bar))
   assert.equal(f.ctx.created[0].style.display, 'block')

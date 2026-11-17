@@ -13,7 +13,7 @@ test('QQ Music maps a playback control to the one loaded track', () => {
   const control = {
     closest: (selector) => (selector === '.player__ft' ? anchor : null),
   }
-  const origin = { closest: () => control }
+  const origin = { children: [], closest: () => control }
   const audio = {
     readyState: 4,
     paused: false,
@@ -27,10 +27,10 @@ test('QQ Music maps a playback control to the one loaded track', () => {
     document: { querySelectorAll: () => tracks },
   })
   vm.runInContext(sourceCode, context)
-  const find = context.__inkloomMediaFallback.qqMusicAudio
+  const find = context.__inkloomMediaFallback.audioPlayer
   assert.equal(find(origin).element, audio)
   assert.equal(find(origin).anchor, anchor)
-  assert.equal(find({ closest: () => null }), null)
+  assert.equal(find({ children: [], closest: () => null }), null)
   audio.mediaKeys = {}
   assert.equal(find(origin), null)
   delete audio.mediaKeys
@@ -56,7 +56,7 @@ test('QQ Music can select complete bytes before native media metadata loads', ()
         : null,
   }
   const control = { closest: () => anchor }
-  const origin = { closest: () => control }
+  const origin = { children: [], closest: () => control }
   const audio = {
     src: 'blob:https://y.qq.com/fixture',
     currentSrc: '',
@@ -69,10 +69,72 @@ test('QQ Music can select complete bytes before native media metadata loads', ()
     document: { querySelectorAll: () => [], querySelector: () => audio },
   })
   vm.runInContext(sourceCode, context)
-  const find = context.__inkloomMediaFallback.qqMusicAudio
+  const find = context.__inkloomMediaFallback.audioPlayer
   assert.equal(find(origin).element, audio)
   trial = true
   assert.equal(find(origin), null)
+})
+
+test('custom controls select a single hidden native audio inside a compact container', () => {
+  const body = { children: [] }
+  const audio = {
+    tagName: 'AUDIO',
+    isConnected: true,
+    readyState: 4,
+    currentSrc: 'https://media.example/song.mp3',
+    getBoundingClientRect: () => ({ width: 0, height: 0 }),
+  }
+  const anchor = {
+    children: [audio],
+    parentElement: body,
+    getBoundingClientRect: () => ({ width: 600, height: 70 }),
+  }
+  const control = { children: [], parentElement: anchor }
+  const context = vm.createContext({
+    location: { hostname: 'example.test' },
+    document: { body },
+    innerHeight: 900,
+  })
+  vm.runInContext(sourceCode, context)
+  const find = context.__inkloomMediaFallback.audioPlayer
+  assert.equal(find(control).element, audio)
+  assert.equal(find(control).anchor, anchor)
+  audio.mediaKeys = {}
+  assert.equal(find(control), null)
+  delete audio.mediaKeys
+  anchor.children.push({ ...audio })
+  assert.equal(find(control), null)
+  anchor.children.pop()
+  anchor.getBoundingClientRect = () => ({ width: 600, height: 850 })
+  assert.equal(find(control), null)
+})
+
+test('Apple Music associates its detached preview source only with the player bar', () => {
+  const audio = {
+    tagName: 'AUDIO',
+    isConnected: true,
+    readyState: 4,
+    currentSrc: 'https://audio.example/preview.m4a',
+    getBoundingClientRect: () => ({ width: 0, height: 0 }),
+  }
+  const body = { children: [audio] }
+  const anchor = { children: [], parentElement: body }
+  const control = { children: [], parentElement: anchor, closest: () => anchor }
+  const context = vm.createContext({
+    location: { hostname: 'music.apple.com' },
+    document: {
+      body,
+      getElementById: (id) => (id === 'apple-music-player' ? audio : null),
+    },
+  })
+  vm.runInContext(sourceCode, context)
+  const find = context.__inkloomMediaFallback.audioPlayer
+  assert.equal(find(control).element, audio)
+  assert.equal(find(control).anchor, anchor)
+  assert.equal(
+    find({ children: [], parentElement: body, closest: () => null }),
+    null
+  )
 })
 
 function fixture({

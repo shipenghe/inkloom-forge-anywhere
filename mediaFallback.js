@@ -172,5 +172,53 @@
     return { element, anchor, control }
   }
 
-  globalThis.__inkloomMediaFallback = { imageUrl, qqMusicAudio }
+  function hiddenAudio(element) {
+    if (
+      element?.tagName !== 'AUDIO' ||
+      !element.isConnected ||
+      element.readyState < 1 ||
+      element.error ||
+      element.mediaKeys ||
+      element.srcObject ||
+      !/^(https?:|blob:)/i.test(element.currentSrc)
+    )
+      return false
+    const { width, height } = element.getBoundingClientRect()
+    return width === 0 || height === 0
+  }
+
+  function audioPlayer(origin) {
+    // Custom controls may share their compact container with a hidden native
+    // player. Only use a direct child audio element in that container.
+    for (
+      let anchor = origin, depth = 0;
+      anchor &&
+      anchor !== document.body &&
+      anchor !== document.documentElement &&
+      depth < 8;
+      anchor = anchor.parentElement, depth++
+    ) {
+      const tracks = [...anchor.children].filter(
+        (node) => node.tagName === 'AUDIO'
+      )
+      if (!tracks.length) continue
+      const { width, height } = anchor.getBoundingClientRect()
+      if (width < 80 || height < 18 || height > Math.min(innerHeight / 3, 240))
+        continue
+      const [element] = tracks
+      return tracks.length === 1 && hiddenAudio(element)
+        ? { element, anchor, control: anchor }
+        : null
+    }
+
+    // Apple Music places the preview's audio element outside its control bar.
+    if (location.hostname === 'music.apple.com') {
+      const anchor = origin?.closest('[data-testid="player-bar"]')
+      const element = anchor && document.getElementById('apple-music-player')
+      return hiddenAudio(element) ? { element, anchor, control: anchor } : null
+    }
+    return qqMusicAudio(origin)
+  }
+
+  globalThis.__inkloomMediaFallback = { imageUrl, audioPlayer }
 })()
