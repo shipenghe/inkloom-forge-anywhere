@@ -258,6 +258,7 @@
                     />
                     <path d="m10 8 6 4-6 4V8Z" fill="currentColor" />
                   </svg>
+                  <span id="audio-icon" class="audio-icon" hidden>♪</span>
                 </span>
                 <button
                   id="toggle-video-preview"
@@ -283,6 +284,12 @@
               playsinline
               hidden
             ></video>
+            <audio
+              id="audio-preview"
+              class="audio-preview"
+              controls
+              hidden
+            ></audio>
           </div>
           <div id="guide" class="guide">
             <div class="guide-icon" aria-hidden="true">
@@ -300,7 +307,7 @@
                 右键素材，发送到画布
               </p>
               <p class="guide-copy" data-i18n="text_eeb7cae179b4">
-                图片、视频都支持
+                图片、视频和音频都支持
               </p>
             </div>
           </div>

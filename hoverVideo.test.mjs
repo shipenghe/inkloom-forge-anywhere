@@ -11,7 +11,7 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
     `
     class Element {
       constructor(tag='div', rect={left:100,top:100,right:500,bottom:350,width:400,height:250}) {
-        this.tag=tag; this.rect=rect; this.children=[]; this.parentElement=null;
+        this.tag=tag; this.tagName=tag.toUpperCase(); this.rect=rect; this.children=[]; this.parentElement=null;
         this.style={display:'block',visibility:'visible',opacity:'1'}; this.isConnected=true;
         this.listeners={}; this.hidden=false; this.attrs={}
       }
@@ -21,7 +21,7 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
       setAttribute(k,v){this.attrs[k]=v}
       addEventListener(type, fn){this.listeners[type]=fn}
       matches(selector){
-        if (selector==='img, video') return this.tag==='video'||this.tag==='img'
+        if (selector==='img, video, audio') return ['img','video','audio'].includes(this.tag)
         if (selector==='dialog, [role="dialog"], [aria-modal="true"]') return this.tag==='dialog'
         return false
       }

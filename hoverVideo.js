@@ -70,7 +70,7 @@
     const rect = element.getBoundingClientRect()
     if (
       rect.width < 80 ||
-      rect.height < 60 ||
+      rect.height < (element.tagName === 'AUDIO' ? 18 : 60) ||
       x < rect.left ||
       x >= rect.right ||
       y < rect.top ||
@@ -96,8 +96,17 @@
 
   function isMedia(element) {
     return (
-      element instanceof HTMLImageElement || element instanceof HTMLVideoElement
+      element instanceof HTMLImageElement ||
+      element instanceof HTMLVideoElement ||
+      element?.tagName === 'AUDIO'
     )
+  }
+  function sendLabel(element) {
+    if (!targetAvailable) return '打开 Forge'
+    if (element?.tagName === 'AUDIO') return '发送音频到画布'
+    return element instanceof HTMLImageElement
+      ? '发送图片到画布'
+      : '发送视频到画布'
   }
   function opaqueBackdrop(style) {
     const background = style.backgroundImage
@@ -202,10 +211,13 @@
         const found = [...candidates][0].getBoundingClientRect()
         if (rect.width * rect.height > found.width * found.height * 4) break
       }
-      for (const item of scope.querySelectorAll('img, video')) {
+      for (const item of scope.querySelectorAll('img, video, audio')) {
         if (!isMedia(item) || !visibleAt(item, x, y)) continue
         // Unstarted previews can leave an empty video element over the cover.
-        if (item instanceof HTMLVideoElement && !(item.currentSrc || item.src))
+        if (
+          !(item instanceof HTMLImageElement) &&
+          !(item.currentSrc || item.src)
+        )
           continue
         if (dialog && !dialog.contains(item)) continue
         if (blockedByOpaqueLayer(item, scope)) continue
@@ -248,10 +260,12 @@
       return
     }
     const right = Math.min(rect.right, innerWidth) - 8
-    const top = Math.max(rect.top, 0) + 8
+    const audio = element.tagName === 'AUDIO'
+    const above = audio && rect.top >= 44
+    const top = above ? rect.top - 44 : Math.max(rect.top, 0) + (audio ? 0 : 8)
     if (
       right - 36 < Math.max(rect.left, 0) ||
-      top + 36 > Math.min(rect.bottom, innerHeight)
+      top + 36 > (audio ? innerHeight : Math.min(rect.bottom, innerHeight))
     ) {
       hide()
       return
@@ -311,16 +325,7 @@
     selectedUrl = candidateUrl
     button.disabled = false
     button.title = t(targetAvailable ? '发送到画布' : '打开 Forge')
-    button.setAttribute(
-      'aria-label',
-      t(
-        !targetAvailable
-          ? '打开 Forge'
-          : candidate instanceof HTMLImageElement
-          ? '发送图片到画布'
-          : '发送视频到画布'
-      )
-    )
+    button.setAttribute('aria-label', t(sendLabel(candidate)))
     place(candidate)
     watchSelection()
     clearTimeout(idleTimer)
@@ -423,7 +428,12 @@
       say('无法读取素材')
       return
     }
-    const mediaKind = selected instanceof HTMLImageElement ? 'image' : 'video'
+    const mediaKind =
+      selected.tagName === 'AUDIO'
+        ? 'audio'
+        : selected instanceof HTMLImageElement
+        ? 'image'
+        : 'video'
     clearTimeout(idleTimer)
     clearTimeout(selectionTimer)
     busy = true
@@ -453,12 +463,14 @@
       const source =
         mediaKind === 'image'
           ? { displayUrl: transferUrl }
-          : {
+          : mediaKind === 'video'
+          ? {
               videoCandidates:
                 globalThis.__inkloomVideoCandidates?.videoCandidates(
                   selected
                 ) || [],
             }
+          : {}
       const result = await chrome.runtime.sendMessage({
         kind: 'HOVER_MEDIA_SEND',
         url: transferUrl,
@@ -523,16 +535,7 @@
     window.addEventListener(type, captureButtonEvent, true)
   const unsubscribeLanguage = globalThis.ForgeI18n?.subscribe(() => {
     button.title = t(targetAvailable ? '发送到画布' : '打开 Forge')
-    button.setAttribute(
-      'aria-label',
-      t(
-        !targetAvailable
-          ? '打开 Forge'
-          : media instanceof HTMLImageElement
-          ? '发送图片到画布'
-          : '发送视频到画布'
-      )
-    )
+    button.setAttribute('aria-label', t(sendLabel(media)))
     notice.textContent = t(noticeMessage)
   })
   function stop() {

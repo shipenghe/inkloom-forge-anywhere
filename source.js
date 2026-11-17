@@ -15,7 +15,8 @@
     const result = { ok: true }
     try {
       const image = message.mediaKind === 'image'
-      if (!image && message.mediaKind !== 'video') return result
+      const audio = message.mediaKind === 'audio'
+      if (!image && !audio && message.mediaKind !== 'video') return result
       const url = image ? message.displayUrl || message.url : message.url
       if (typeof url !== 'string' || !url) return result
       const matches = (element) =>
@@ -23,7 +24,7 @@
       let media = image ? globalThis.__inkloomSelectedImage : null
       if (!matches(media)) {
         const candidates = [
-          ...document.querySelectorAll(image ? 'img' : 'video'),
+          ...document.querySelectorAll(image ? 'img' : message.mediaKind),
         ].filter(matches)
         media = candidates.length === 1 ? candidates[0] : null
       }
@@ -32,6 +33,7 @@
       if (title && !/^https?:\/\//i.test(title)) result.title = title
       if (!image && Number.isFinite(media.duration) && media.duration > 0)
         result.duration = media.duration
+      if (audio) return result
       const width = image ? media.naturalWidth : media.videoWidth
       const height = image ? media.naturalHeight : media.videoHeight
       if (
@@ -69,12 +71,15 @@
     }
     if (
       !message ||
-      !['READ_BLOB', 'READ_DISPLAYED_IMAGE'].includes(message.kind)
+      !['READ_BLOB', 'READ_DISPLAYED_IMAGE', 'READ_CACHED_AUDIO'].includes(
+        message.kind
+      )
     )
       return
     ;(async () => {
       let unavailableVideo = false
       let startedTransfer = false
+      const cachedAudio = message.kind === 'READ_CACHED_AUDIO'
       try {
         let response
         let blob
@@ -113,8 +118,24 @@
             return
           }
         } else {
+          // only-if-cached is limited to same-origin requests. It must not
+          // initiate a second network fetch before the import fallback.
+          if (
+            cachedAudio &&
+            (message.mediaKind !== 'audio' ||
+              new URL(message.url).origin !== location.origin)
+          ) {
+            sendResponse({ ok: false, code: 'CACHED_AUDIO_UNAVAILABLE' })
+            return
+          }
           try {
-            response = await fetch(message.url)
+            response = cachedAudio
+              ? await fetch(message.url, {
+                  mode: 'same-origin',
+                  cache: 'only-if-cached',
+                  redirect: 'error',
+                })
+              : await fetch(message.url)
           } catch (error) {
             if (message.mediaKind === 'video' && error instanceof TypeError) {
               unavailableVideo = true
@@ -123,6 +144,11 @@
             throw error
           }
           if (!response.ok) throw new Error('无法读取页面中的媒体')
+          if (
+            message.mediaKind === 'audio' &&
+            (response.status === 206 || response.headers.get('content-range'))
+          )
+            throw new Error('获取到的音频不完整')
           const declared = Number(response.headers.get('content-length'))
           const maxSize = 200 * 1024 * 1024
           if (declared > maxSize || !response.body)
@@ -144,6 +170,14 @@
           } finally {
             reader.releaseLock()
           }
+          const length = response.headers.get('content-length')
+          if (
+            message.mediaKind === 'audio' &&
+            length !== null &&
+            !response.headers.get('content-encoding') &&
+            Number(length) !== total
+          )
+            throw new Error('获取到的音频不完整')
           blob = new Blob(chunks, {
             type: response.headers.get('content-type')?.split(';')[0] || '',
           })
@@ -191,6 +225,9 @@
         sendResponse({
           ok: false,
           error: error?.message || '读取媒体失败',
+          ...(cachedAudio && !startedTransfer
+            ? { code: 'CACHED_AUDIO_UNAVAILABLE' }
+            : {}),
           ...(unavailableVideo ? { code: 'VIDEO_BLOB_UNAVAILABLE' } : {}),
         })
       }

@@ -460,8 +460,8 @@
     "description": "正在连接…"
   },
   "text_8fb14c7a21f6": {
-    "message": "此处有多个图片或视频，请点击更明确的位置",
-    "description": "此处有多个图片或视频，请点击更明确的位置"
+    "message": "此处有多个素材，请点击更明确的位置",
+    "description": "此处有多个素材，请点击更明确的位置"
   },
   "text_45ed68839761": {
     "message": "没有可授权的素材来源，请重新选择",
@@ -472,8 +472,8 @@
     "description": "浏览器未允许请求素材权限，请在插件中重新选择素材并授权"
   },
   "text_f2297a35a412": {
-    "message": "点击图片或视频 · Esc 取消",
-    "description": "点击图片或视频 · Esc 取消"
+    "message": "点击图片、视频或音频 · Esc 取消",
+    "description": "点击图片、视频或音频 · Esc 取消"
   },
   "text_908e56fe5ed8": {
     "message": "片段",
@@ -852,8 +852,8 @@
     "description": "右键素材，发送到画布"
   },
   "text_eeb7cae179b4": {
-    "message": "图片、视频都支持",
-    "description": "图片、视频都支持"
+    "message": "图片、视频和音频都支持",
+    "description": "图片、视频和音频都支持"
   },
   "text_31a42eb9e6de": {
     "message": "授权并重试",
@@ -1021,5 +1021,41 @@
   "videoPreviewUnavailable": {
     "message": "视频预览不可用，请在画布中播放",
     "description": "视频预览不可用，请在画布中播放"
+  },
+  "audioKind": {
+    "message": "音频",
+    "description": "音频"
+  },
+  "playAudioPreview": {
+    "message": "播放音频",
+    "description": "播放音频"
+  },
+  "collapseAudioPreview": {
+    "message": "收起音频",
+    "description": "收起音频"
+  },
+  "audioPreview": {
+    "message": "音频预览",
+    "description": "音频预览"
+  },
+  "audioPreviewUnavailable": {
+    "message": "音频预览不可用，请在画布中播放",
+    "description": "音频预览不可用，请在画布中播放"
+  },
+  "sendAudioToCanvas": {
+    "message": "发送音频到画布",
+    "description": "发送音频到画布"
+  },
+  "unsupportedAudio": {
+    "message": "不支持该音频格式或音频不完整",
+    "description": "不支持该音频格式或音频不完整"
+  },
+  "incompleteAudio": {
+    "message": "获取到的音频不完整",
+    "description": "获取到的音频不完整"
+  },
+  "audioReadFailed": {
+    "message": "读取音频失败",
+    "description": "读取音频失败"
   }
 }

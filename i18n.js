@@ -33,7 +33,7 @@
     const row = bySource.get(value)
     if (row) return row[2]
     // Compose only extension messages. Never apply this function to user titles.
-    const sent = value.match(/^(图片|视频片段|视频)已交给画布(（无声）)?$/)
+    const sent = value.match(/^(图片|视频片段|视频|音频)已交给画布(（无声）)?$/)
     if (sent)
       return `${text(sent[1])} sent to canvas${sent[2] ? ' (No audio)' : ''}`
     const http = value.match(/^无法获取媒体（HTTP (\d{3})）$/)

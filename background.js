@@ -3,6 +3,12 @@ const CHUNK_SIZE = 192 * 1024
 const MAX_TRANSFER_SIZE = 200 * 1024 * 1024
 const CONTEXT_MENU_ID = 'send-media-to-canvas'
 const FORGE_HOME_URL = 'https://forge.art/'
+const MEDIA_KINDS = ['image', 'video', 'audio']
+const SOURCE_PERMISSION_CODES = [
+  'VIDEO_SOURCE_PERMISSION',
+  'IMAGE_SOURCE_PERMISSION',
+  'AUDIO_SOURCE_PERMISSION',
+]
 const WEIBO_ORIGIN = 'https://weibo.com'
 const WEIBO_MEDIA_RULE_ID = 1
 if (typeof importScripts === 'function')
@@ -151,9 +157,7 @@ function resultError(error) {
   return {
     ok: false,
     error: userErrorMessage(error),
-    ...(['VIDEO_SOURCE_PERMISSION', 'IMAGE_SOURCE_PERMISSION'].includes(
-      error?.code
-    )
+    ...(SOURCE_PERMISSION_CODES.includes(error?.code)
       ? { code: error.code }
       : {}),
   }
@@ -258,7 +262,7 @@ async function refreshContextMenu() {
       enabled: true,
       visible: true,
       title: t(target ? '发送到画布' : '打开 Forge'),
-      contexts: ['image', 'video', 'link'],
+      contexts: [...MEDIA_KINDS, 'link'],
     })
   } catch {
     // The menu may not yet exist while the extension is being installed.
@@ -448,6 +452,7 @@ async function currentTarget() {
   return target
 }
 function inferMime(blobType, url, mediaKind) {
+  if (mediaKind === 'audio') return 'audio/x-unknown'
   if (/^(image|video)\//i.test(blobType || '')) return blobType.toLowerCase()
   let path = ''
   try {
@@ -471,7 +476,8 @@ function inferMime(blobType, url, mediaKind) {
   throw new Error('无法识别媒体文件类型，请尝试其他素材')
 }
 function fileName(mime) {
-  const mediaType = mime.startsWith('image/') ? 'Image' : 'Video'
+  const type = mime.split('/', 1)[0]
+  const mediaType = type[0].toUpperCase() + type.slice(1)
   return `FA ${mediaType} ${Date.now()}`
 }
 function encode(bytes) {
@@ -499,6 +505,7 @@ async function abortTransfer(t) {
   if (t?.begun) await sendTarget(t.target, 'ABORT', t.id).catch(() => {})
 }
 async function deliverBlob(t, blob, mime = blob.type) {
+  if (t.selection.mediaKind === 'audio') blob = await prepareAudio(t, blob)
   await beginTransfer(t, blob.size, mime)
   let sequence = 0
   for (let start = 0; start < blob.size; start += CHUNK_SIZE) {
@@ -510,9 +517,23 @@ async function deliverBlob(t, blob, mime = blob.type) {
       data: encode(bytes),
     })
   }
-  const result = await sendTarget(t.target, 'END', t.id)
-  if (t.selection.mediaKind === 'video') t.playbackFile = blob
+  const result = await finishDelivery(t)
+  if (t.selection.mediaKind !== 'image') t.playbackFile = blob
   return result
+}
+async function prepareAudio(t, blob) {
+  const audio = await globalThis.__forgeInspectAudio(blob)
+  if (!audio) throw new Error('不支持该音频格式或音频不完整')
+  t.audio = audio
+  return blob.slice(0, blob.size, audio.mime)
+}
+function finishDelivery(t) {
+  return sendTarget(
+    t.target,
+    'END',
+    t.id,
+    t.audio ? { mime: t.audio.mime } : {}
+  )
 }
 async function boundedBlob(response, mediaKind) {
   const declared = Number(response.headers.get('content-length'))
@@ -701,6 +722,7 @@ async function fetchSelectedMedia(url, selection) {
   if (
     !rules ||
     !selection.weiboPage ||
+    selection.mediaKind === 'audio' ||
     !weiboCdn ||
     url.protocol !== 'https:' ||
     url.port
@@ -938,19 +960,20 @@ async function importCapturedVideo(t, capture) {
   await deliverBlob(t, clip.blob, 'video/mp4')
   return clip.hasAudio
 }
-async function tryDisplayedImage(selection, t) {
-  if (selection.mediaKind !== 'image' || !/^https?:/i.test(selection.url))
+async function tryPageMedia(selection, t) {
+  if (selection.mediaKind === 'video' || !/^https?:/i.test(selection.url))
     return false
+  const audio = selection.mediaKind === 'audio'
   let response
   try {
     response = await chrome.tabs.sendMessage(
       selection.tabId,
       {
-        kind: 'READ_DISPLAYED_IMAGE',
+        kind: audio ? 'READ_CACHED_AUDIO' : 'READ_DISPLAYED_IMAGE',
         url: selection.url,
         displayUrl: selection.displayUrl,
         transferId: t.id,
-        mediaKind: 'image',
+        mediaKind: selection.mediaKind,
       },
       selection.documentId
         ? { documentId: selection.documentId }
@@ -963,8 +986,12 @@ async function tryDisplayedImage(selection, t) {
     return false
   }
   if (response?.ok) return true
-  if (response?.code === 'DISPLAYED_IMAGE_UNAVAILABLE') return false
-  throw new Error(response?.error || '读取图片失败')
+  if (
+    response?.code ===
+    (audio ? 'CACHED_AUDIO_UNAVAILABLE' : 'DISPLAYED_IMAGE_UNAVAILABLE')
+  )
+    return false
+  throw new Error(response?.error || (audio ? '读取音频失败' : '读取图片失败'))
 }
 async function runImport(contextSelection, existingTransfer) {
   const t = existingTransfer || lockTransfer()
@@ -997,8 +1024,8 @@ async function runImport(contextSelection, existingTransfer) {
         throw new Error('分段采集已断开，请重新开启并选择视频')
       clipHasAudio = await importCapturedVideo(t, capture)
       await globalThis.inkloomMseController.stop().catch(() => {})
-    } else if (await tryDisplayedImage(selection, t)) {
-      // The page exported the selected, already decoded pixels as a PNG.
+    } else if (await tryPageMedia(selection, t)) {
+      // The source page already delivered the image or cached audio.
     } else if (selection.url.startsWith('blob:')) {
       let result
       try {
@@ -1065,14 +1092,17 @@ async function runImport(contextSelection, existingTransfer) {
       if (!['http:', 'https:', 'data:'].includes(url.protocol))
         throw new Error('不支持该素材的地址类型')
       if (
-        selection.mediaKind === 'image' &&
+        selection.mediaKind !== 'video' &&
         ['http:', 'https:'].includes(url.protocol) &&
         !(await chrome.permissions.contains({
           origins: [`${url.protocol}//${url.hostname}/*`],
         }))
       ) {
         const error = new Error('请授权素材来源')
-        error.code = 'IMAGE_SOURCE_PERMISSION'
+        error.code =
+          selection.mediaKind === 'audio'
+            ? 'AUDIO_SOURCE_PERMISSION'
+            : 'IMAGE_SOURCE_PERMISSION'
         throw error
       }
       let blob
@@ -1090,7 +1120,21 @@ async function runImport(contextSelection, existingTransfer) {
         else {
           if (!response.ok)
             throw new Error(`无法获取媒体（HTTP ${response.status}）`)
+          const audio = selection.mediaKind === 'audio'
+          if (
+            audio &&
+            (response.status === 206 || response.headers.get('content-range'))
+          )
+            throw new Error('获取到的音频不完整')
           blob = await boundedBlob(response, selection.mediaKind)
+          const length = response.headers.get('content-length')
+          if (
+            audio &&
+            length !== null &&
+            !response.headers.get('content-encoding') &&
+            Number(length) !== blob.size
+          )
+            throw new Error('获取到的音频不完整')
         }
       } catch (error) {
         if (
@@ -1118,6 +1162,8 @@ async function runImport(contextSelection, existingTransfer) {
     const type =
       selection.mediaKind === 'image'
         ? '图片'
+        : selection.mediaKind === 'audio'
+        ? '音频'
         : selection.mse
         ? '视频片段'
         : '视频'
@@ -1126,6 +1172,12 @@ async function runImport(contextSelection, existingTransfer) {
       filename: t.filename,
       canvasName: target.title,
       ...(t.previewDataUrl ? { previewDataUrl: t.previewDataUrl } : {}),
+      ...(t.audio && {
+        duration:
+          Number.isFinite(t.audio.duration) && t.audio.duration > 0
+            ? t.audio.duration
+            : metadata.sourceDuration,
+      }),
       ...(t.clipRange || {
         isClip: false,
         ...(metadata.sourceDuration
@@ -1166,7 +1218,7 @@ async function runImport(contextSelection, existingTransfer) {
 
 async function contextSelection(info, tab) {
   if (!tab?.id) throw new Error('无法识别选中的媒体')
-  const linked = !['image', 'video'].includes(info.mediaType)
+  const linked = !MEDIA_KINDS.includes(info.mediaType)
   if (
     linked &&
     (typeof info.linkUrl !== 'string' || !/^https?:/i.test(info.linkUrl))
@@ -1221,7 +1273,7 @@ async function contextSelection(info, tab) {
     } catch {}
     if (
       !candidate ||
-      !['image', 'video'].includes(candidate.mediaKind) ||
+      !MEDIA_KINDS.includes(candidate.mediaKind) ||
       typeof candidate.url !== 'string' ||
       !/^(https?:|blob:|data:)/i.test(candidate.url)
     )
@@ -1325,8 +1377,7 @@ async function sendFromContextMenu(info, tab) {
   }
   let permission
   const linked =
-    !['image', 'video'].includes(info.mediaType) &&
-    typeof info.linkUrl === 'string'
+    !MEDIA_KINDS.includes(info.mediaType) && typeof info.linkUrl === 'string'
   try {
     if (linked) {
       // The selected media's origin is not known until after DOM inspection;
@@ -1337,7 +1388,7 @@ async function sendFromContextMenu(info, tab) {
       !/^(https?:|blob:|data:)/i.test(info.srcUrl)
     ) {
       throw new Error('无法读取该媒体，请选择其他素材')
-    } else if (info.mediaType === 'image') {
+    } else if (info.mediaType !== 'video') {
       // Export first; if that fails, request origin access from the popup.
       permission = Promise.resolve({ allowed: true })
     } else {
@@ -1389,7 +1440,7 @@ async function sendFromContextMenu(info, tab) {
       selection = await contextSelection(info, tab)
       if (
         linked &&
-        selection.mediaKind !== 'image' &&
+        selection.mediaKind === 'video' &&
         /^https?:/i.test(selection.url)
       ) {
         const source = new URL(selection.url)
@@ -1462,9 +1513,18 @@ async function sendFromContextMenu(info, tab) {
       }
       await contextStatus(tab.id, result.message, false)
     } catch (error) {
-      if (error?.code === 'IMAGE_SOURCE_PERMISSION' && selection) {
+      if (
+        ['IMAGE_SOURCE_PERMISSION', 'AUDIO_SOURCE_PERMISSION'].includes(
+          error?.code
+        ) &&
+        selection
+      ) {
         const existing = await state()
-        await save({ selection: { ...selection, needsImagePermission: true } })
+        const flag =
+          selection.mediaKind === 'audio'
+            ? 'needsAudioPermission'
+            : 'needsImagePermission'
+        await save({ selection: { ...selection, [flag]: true } })
         if (
           existing.selection?.mse &&
           existing.mseCapture?.phase === 'active' &&
@@ -1537,7 +1597,7 @@ async function handle(message, sender) {
     if (!(await state()).target) return openForge()
     const mediaKind = legacy ? 'video' : message.mediaKind
     if (
-      !['image', 'video'].includes(mediaKind) ||
+      !MEDIA_KINDS.includes(mediaKind) ||
       typeof message.url !== 'string' ||
       message.url.length > 4096 ||
       !/^(https?:|blob:|data:)/i.test(message.url)
@@ -1607,17 +1667,14 @@ async function handle(message, sender) {
         )
           error.code = 'VIDEO_SOURCE_PERMISSION'
       }
-      if (
-        !legacy &&
-        ['IMAGE_SOURCE_PERMISSION', 'VIDEO_SOURCE_PERMISSION'].includes(
-          error?.code
-        )
-      ) {
+      if (!legacy && SOURCE_PERMISSION_CODES.includes(error?.code)) {
         await save({
           selection: {
             ...selection,
             ...(mediaKind === 'image'
               ? { needsImagePermission: true }
+              : mediaKind === 'audio'
+              ? { needsAudioPermission: true }
               : { needsVideoPermission: true }),
           },
           lastStatus: '请打开插件授权',
@@ -1653,7 +1710,7 @@ async function handle(message, sender) {
       throw new Error('来源页面已失效')
     if (message.kind === 'MEDIA_SELECTED') {
       if (
-        !['image', 'video'].includes(message.mediaKind) ||
+        !MEDIA_KINDS.includes(message.mediaKind) ||
         typeof message.url !== 'string' ||
         !/^(https?:|blob:|data:)/i.test(message.url)
       )
@@ -1737,7 +1794,10 @@ async function handle(message, sender) {
       throw new Error('来源页面已失效')
     if (message.kind === 'BLOB_META') {
       await beginTransfer(t, message.size, message.mime)
-      if (t.selection.mediaKind === 'video' && globalThis.ForgeVideoPlayback)
+      if (
+        t.selection.mediaKind === 'audio' ||
+        (t.selection.mediaKind === 'video' && globalThis.ForgeVideoPlayback)
+      )
         t.playbackChunks = []
       return { ok: true }
     }
@@ -1760,8 +1820,12 @@ async function handle(message, sender) {
       return { ok: true }
     }
     if (message.kind === 'BLOB_END') {
-      const result = await sendTarget(t.target, 'END', t.id)
-      if (t.playbackChunks) {
+      if (t.selection.mediaKind === 'audio') {
+        if (!t.playbackChunks) throw new Error('获取到的音频不完整')
+        t.playbackFile = await prepareAudio(t, new Blob(t.playbackChunks))
+      }
+      const result = await finishDelivery(t)
+      if (t.playbackChunks && t.selection.mediaKind === 'video') {
         try {
           t.playbackFile = new Blob(t.playbackChunks, { type: t.mime })
         } catch {}
@@ -1947,7 +2011,7 @@ chrome.runtime.onInstalled.addListener(() => {
       {
         id: CONTEXT_MENU_ID,
         title: t('打开 Forge'),
-        contexts: ['image', 'video', 'link'],
+        contexts: [...MEDIA_KINDS, 'link'],
         documentUrlPatterns: ['http://*/*', 'https://*/*'],
       },
       () => {

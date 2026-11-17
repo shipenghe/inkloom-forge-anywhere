@@ -371,7 +371,7 @@
         !message.filename ||
         message.filename.length > 255 ||
         typeof message.mime !== 'string' ||
-        !/^(image|video)\/[a-z0-9.+-]+$/i.test(message.mime) ||
+        !/^(image|video|audio)\/[a-z0-9.+-]+$/i.test(message.mime) ||
         !Number.isSafeInteger(message.size) ||
         message.size <= 0 ||
         message.size > MAX_SIZE
@@ -434,10 +434,18 @@
         clearTransfer()
         return reply(false, 'CANVAS_NOT_READY')
       }
+      const audio = current.mime.startsWith('audio/')
+      if (
+        audio &&
+        !/^audio\/(mpeg|wav|mp4|aac|ogg|flac)$/.test(message.mime || '')
+      ) {
+        clearTransfer()
+        return reply(false, 'INVALID_FILE')
+      }
       let watcher
       try {
         const file = new File(current.chunks, current.filename, {
-          type: current.mime,
+          type: audio ? message.mime : current.mime,
         })
         clearTransfer()
         watcher = watchCanvasHandling(canvas.root, file.name, canvasId)
@@ -470,12 +478,14 @@
         // Reserve immediately, including when handling cannot be confirmed.
         // A delayed upload must not share its position with the next file.
         reservePlacement(placement)
-        const inspection = inspectFile(file)
+        const inspection = audio ? {} : inspectFile(file)
         watcher.check()
         return watcher.promise
           .then(async (handled) => {
             const { width, height, previewDataUrl } = await inspection
-            const bounds = mediaNodeBounds(width, height)
+            const bounds = audio
+              ? { width: 320, height: 180 + NODE_HEADER_HEIGHT }
+              : mediaNodeBounds(width, height)
             placement.layout.rowWidths[placement.row] += bounds.width + GRID_GAP
             placement.layout.rowHeights[placement.row] = Math.max(
               placement.layout.rowHeights[placement.row],

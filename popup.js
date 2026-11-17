@@ -20,8 +20,10 @@ const selectionIcon = document.getElementById('selection-icon')
 const selectionTitle = document.getElementById('selection-title')
 const imageIcon = document.getElementById('image-icon')
 const videoIcon = document.getElementById('video-icon')
+const audioIcon = document.getElementById('audio-icon')
 const toggleVideoPreview = document.getElementById('toggle-video-preview')
 const videoPreview = document.getElementById('video-preview')
+const audioPreview = document.getElementById('audio-preview')
 const setButton = document.getElementById('set-target')
 const clearButton = document.getElementById('clear-target')
 const viewButton = document.getElementById('view-target')
@@ -69,6 +71,7 @@ let activityRevision = null
 let refreshGeneration = 0
 let viewingTarget = false
 let playableVideoId = null
+let playableKind = null
 let openVideo = null
 const selectionPreviews = new Map()
 
@@ -236,8 +239,10 @@ function renderSelection(selection) {
   if (safePreview) selectionPreview.src = preview
   else selectionPreview.removeAttribute('src')
   const isVideo = selection?.mediaKind === 'video'
-  imageIcon.toggleAttribute('hidden', isVideo)
+  const isAudio = selection?.mediaKind === 'audio'
+  imageIcon.toggleAttribute('hidden', isVideo || isAudio)
   videoIcon.toggleAttribute('hidden', !isVideo)
+  audioIcon.hidden = !isAudio
   const title =
     typeof selection?.title === 'string' && selection.title.trim()
       ? selection.title.trim()
@@ -249,19 +254,32 @@ function renderSelection(selection) {
 function renderVideoPreview() {
   toggleVideoPreview.hidden = !playableVideoId
   toggleVideoPreview.setAttribute('aria-expanded', String(!!openVideo))
-  const label = t(openVideo ? '收起视频' : '播放视频')
+  const audio = playableKind === 'audio'
+  toggleVideoPreview.setAttribute(
+    'aria-controls',
+    audio ? 'audio-preview' : 'video-preview'
+  )
+  const label = t(
+    audio
+      ? openVideo
+        ? '收起音频'
+        : '播放音频'
+      : openVideo
+      ? '收起视频'
+      : '播放视频'
+  )
   toggleVideoPreview.setAttribute('aria-label', label)
   toggleVideoPreview.title = label
 }
 function closeVideoPreview() {
-  const url = openVideo?.url
+  const playback = openVideo
   openVideo = null
-  videoPreview.hidden = true
-  if (url) {
-    videoPreview.pause()
-    videoPreview.removeAttribute('src')
-    videoPreview.load()
-    URL.revokeObjectURL(url)
+  if (playback?.url) {
+    playback.player.hidden = true
+    playback.player.pause()
+    playback.player.removeAttribute('src')
+    playback.player.load()
+    URL.revokeObjectURL(playback.url)
   }
 }
 toggleVideoPreview.addEventListener('click', async () => {
@@ -271,7 +289,9 @@ toggleVideoPreview.addEventListener('click', async () => {
     return
   }
   if (!playableVideoId) return
-  const opening = { id: playableVideoId }
+  const audio = playableKind === 'audio'
+  const player = audio ? audioPreview : videoPreview
+  const opening = { id: playableVideoId, player }
   openVideo = opening
   renderVideoPreview()
   try {
@@ -279,23 +299,35 @@ toggleVideoPreview.addEventListener('click', async () => {
     if (openVideo !== opening) return
     if (!file) throw new Error()
     opening.url = URL.createObjectURL(file)
-    videoPreview.src = opening.url
-    videoPreview.setAttribute('aria-label', t('视频预览'))
-    videoPreview.hidden = false
-    void videoPreview.play().catch(() => {})
+    player.src = opening.url
+    player.setAttribute('aria-label', t(audio ? '音频预览' : '视频预览'))
+    player.hidden = false
+    void player.play().catch(() => {})
   } catch {
     if (openVideo !== opening) return
     closeVideoPreview()
     renderVideoPreview()
-    showStatus('视频预览不可用，请在画布中播放', 'error')
+    showStatus(
+      audio
+        ? '音频预览不可用，请在画布中播放'
+        : '视频预览不可用，请在画布中播放',
+      'error'
+    )
   }
 })
-videoPreview.addEventListener('error', () => {
-  if (!openVideo?.url) return
-  closeVideoPreview()
-  renderVideoPreview()
-  showStatus('视频预览不可用，请在画布中播放', 'error')
-})
+for (const player of [videoPreview, audioPreview]) {
+  player.addEventListener('error', () => {
+    if (!openVideo?.url || openVideo.player !== player) return
+    closeVideoPreview()
+    renderVideoPreview()
+    showStatus(
+      player === audioPreview
+        ? '音频预览不可用，请在画布中播放'
+        : '视频预览不可用，请在画布中播放',
+      'error'
+    )
+  })
+}
 function displayedSelection() {
   const selection = currentState?.selection
   const activity = currentState?.mediaActivity
@@ -331,22 +363,29 @@ function renderMediaCard() {
         previewDataUrl: activity.previewDataUrl || selection?.previewDataUrl,
       }
     : selection || legacy
-  const hasMedia = ['image', 'video'].includes(item?.mediaKind)
+  const hasMedia = ['image', 'video', 'audio'].includes(item?.mediaKind)
   guide.hidden = hasMedia
   selectionPanel.hidden = !hasMedia
   renderSelection(item)
   playableVideoId =
-    item?.mediaKind === 'video' &&
+    (item?.mediaKind === 'video' || item?.mediaKind === 'audio') &&
     activity?.status === 'sent' &&
     activity.id === currentState?.playableVideoId
       ? activity.id
       : null
+  playableKind = playableVideoId ? item.mediaKind : null
   if (openVideo && openVideo.id !== playableVideoId) closeVideoPreview()
   renderVideoPreview()
   if (!hasMedia) return
   const isClip = item.isClip || item.mse
   const kind =
-    item.mediaKind === 'image' ? '图片' : isClip ? '视频片段' : '视频'
+    item.mediaKind === 'image'
+      ? '图片'
+      : item.mediaKind === 'audio'
+      ? '音频'
+      : isClip
+      ? '视频片段'
+      : '视频'
   const status = activity?.status || item.status || 'selected'
   selectionPanel.dataset.status = status
   selectionNode.textContent = t(
@@ -381,7 +420,13 @@ function renderMediaCard() {
           : ''
         : '',
       item.hasAudio === false ? '无声' : '',
-      status === 'sent' && !range ? '已交给画布' : '',
+      item.mediaKind === 'audio' &&
+      Number.isFinite(item.duration ?? item.sourceDuration)
+        ? formatMediaTime(item.duration ?? item.sourceDuration)
+        : '',
+      status === 'sent' && (item.mediaKind !== 'video' || !range)
+        ? '已交给画布'
+        : '',
     ]
       .filter(Boolean)
       .join(' · ')
@@ -465,6 +510,7 @@ function render() {
     !selection ||
     (permissionNeededFor !== currentState.selection.url &&
       !currentState.selection.needsImagePermission &&
+      !currentState.selection.needsAudioPermission &&
       !currentState.selection.needsVideoPermission)
   authorizeVideoButton.disabled = disabled || !target
   if (!authorizeVideoButton.hidden) importButton.hidden = true
@@ -535,13 +581,19 @@ async function action(fn, scope = 'media') {
     permissionNeededKind = null
   } catch (error) {
     if (
-      ['VIDEO_SOURCE_PERMISSION', 'IMAGE_SOURCE_PERMISSION'].includes(
-        error?.code
-      )
+      [
+        'VIDEO_SOURCE_PERMISSION',
+        'IMAGE_SOURCE_PERMISSION',
+        'AUDIO_SOURCE_PERMISSION',
+      ].includes(error?.code)
     ) {
       permissionNeededFor = currentState?.selection?.url || null
       permissionNeededKind =
-        error.code === 'IMAGE_SOURCE_PERMISSION' ? 'image' : 'video'
+        error.code === 'VIDEO_SOURCE_PERMISSION'
+          ? 'video'
+          : error.code === 'AUDIO_SOURCE_PERMISSION'
+          ? 'audio'
+          : 'image'
     }
     showStatus(error?.message || '操作失败，请重试', 'error', scope)
   } finally {
@@ -604,7 +656,7 @@ importButton.addEventListener('click', () => {
     if (!selection) throw new Error('请先选择素材')
     const url = new URL(selection.url)
     if (
-      selection.mediaKind !== 'image' &&
+      selection.mediaKind === 'video' &&
       (url.protocol === 'http:' || url.protocol === 'https:')
     ) {
       const originPattern = `${url.protocol}//${url.hostname}/*`
@@ -623,7 +675,9 @@ authorizeVideoButton.addEventListener('click', () => {
   action(async () => {
     const selection = currentState?.selection
     const candidates =
-      permissionNeededKind === 'image' || selection?.needsImagePermission
+      selection?.mediaKind !== 'video' ||
+      permissionNeededKind === 'image' ||
+      selection?.needsImagePermission
         ? [selection?.url]
         : [selection?.url, ...(selection?.videoCandidates || [])]
     const origins = [

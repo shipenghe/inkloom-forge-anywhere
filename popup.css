@@ -342,6 +342,9 @@ h1 {
   color: #d16f5e;
   background: #fff2ed;
 }
+.audio-icon {
+  font-size: 24px;
+}
 .guide-icon svg,
 .selection-icon svg {
   width: 25px;
@@ -421,6 +424,11 @@ h1 {
   border-radius: 12px;
   background: #242326;
   object-fit: contain;
+}
+.audio-preview {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
 }
 .selection-copy {
   min-width: 0;

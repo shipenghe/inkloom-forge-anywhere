@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.23
+# Forge Anywhere · v1.0.24
 
-Send inspiration to your canvas. Send images and videos from webpages to an open Forge or Tusi canvas.
+Send inspiration to your canvas. Send images, videos and audio from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.23.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.24.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -15,7 +15,7 @@ Setting the destination again checks and updates the canvas connection script. O
 ## Send media
 
 1. Sign in to Forge or Tusi and open a workflow canvas. Open Forge Anywhere and choose **Set destination**. Keep the canvas tab open.
-2. Switch to a webpage. Right-click an image or a video and choose **Send to canvas**. If the site has its own right-click menu, click the Forge icon that appears at the top-right of the media after right-clicking it.
+2. Switch to a webpage. Right-click an image, a video or an audio player and choose **Send to canvas**. If the site has its own right-click menu, click the Forge icon that appears at the top-right of the media after right-clicking it.
 3. Allow access to the required source if prompted. Check the canvas for the new media. **Open** in the destination card takes you back to that canvas.
 
 The Forge logo in the panel opens the [Forge homepage](https://forge.art/). Without a destination, the media context menu and the icon shown after right-clicking open Forge instead. Set a destination to send media; earlier clicks are not automatically replayed.
@@ -26,7 +26,7 @@ Translucent gradient overlays, including those on Pexels photos and video previe
 
 The panel keeps the latest media preview and its selected, sending, sent, or failed state in one card. **Sent** means the file was handed to the canvas and handling was detected. Uploading and saving still depend on the canvas; check its result before retrying.
 
-Images and videos retain their original aspect ratio in the panel. After delivery, click the video thumbnail to play the file in the panel. The most recently delivered video is cached locally until the next delivery or a browser restart.
+Images and videos retain their original aspect ratio in the panel. After delivery, use the play button to play the most recently delivered video or audio in the panel. The playback file is cached locally until the next delivery or a browser restart.
 
 ## Placement
 
@@ -51,10 +51,11 @@ By default, Chinese browser languages—including Traditional Chinese—use Simp
 ## Notes
 
 - The extension sends a media file through the canvas's existing file-drop upload flow. It does not save a source-page link as your canvas asset.
+- Audio support covers MP3, WAV, M4A, AAC, OGG and FLAC. The extension tries a page Blob or a complete same-origin cache entry before fetching the original file. Segmented audio streams are outside this flow.
 - Readable images are exported as PNG. If browser security rules prevent this, the extension may request source access and fetch the original file. Supported original image formats are static JPEG, PNG and WebP.
-- Media filenames are `FA Image <timestamp>` or `FA Video <timestamp>`, with no extension.
+- Media filenames are `FA Image <timestamp>`, `FA Video <timestamp>` or `FA Audio <timestamp>`, with no extension.
 - The destination must stay open. After refreshing it, navigating away, or reloading the extension, check and set the destination again as needed.
-- Only supported image and video elements are detected. CSS backgrounds, canvas-rendered content and cross-origin embedded players are outside the current selection scope.
+- Selection covers supported image, video and audio elements. CSS backgrounds, canvas-rendered content and cross-origin embedded players are outside the current selection scope.
 - Website access is declared at installation. Turning off auto-prepare stops preparation but does not revoke website permissions. You can revoke those in browser extension settings.
 - The canvas's existing format, size, account and upload restrictions still apply. Check the canvas before manually retrying an uncertain delivery to avoid duplicates.
 
@@ -72,6 +73,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.23.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.24.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

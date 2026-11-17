@@ -68,8 +68,55 @@ function fixture(fetch, failEnd = false, document = null, globals = {}) {
     new Promise((resolve) =>
       listener({ kind: 'READ_MEDIA_PREVIEW', ...message }, {}, resolve)
     )
-  return { read, readDisplayed, readPreview, sent }
+  const readCachedAudio = (url) =>
+    new Promise((resolve) =>
+      listener(
+        { kind: 'READ_CACHED_AUDIO', url, mediaKind: 'audio', transferId: '1' },
+        {},
+        resolve
+      )
+    )
+  return { read, readDisplayed, readPreview, readCachedAudio, sent }
 }
+
+test('reads same-origin cached audio without a network request and leaves misses to the importer', async () => {
+  const origin = 'https://example.com'
+  const url = origin + '/audio.wav'
+  const requests = []
+  let partial = false
+  const f = fixture(
+    async (resource, options) => {
+      requests.push(resource)
+      assert.equal(options.mode, 'same-origin')
+      assert.equal(options.cache, 'only-if-cached')
+      return new Response(
+        new Uint8Array([1, 2, 3]),
+        partial
+          ? {
+              status: 206,
+              headers: { 'Content-Range': 'bytes 0-2/10' },
+            }
+          : undefined
+      )
+    },
+    false,
+    null,
+    { location: { origin } }
+  )
+  assert.equal((await f.readCachedAudio(url)).ok, true)
+  assert.deepEqual(
+    f.sent.map((message) => message.kind),
+    ['BLOB_META', 'BLOB_CHUNK', 'BLOB_END']
+  )
+  partial = true
+  assert.equal((await f.readCachedAudio(url)).code, 'CACHED_AUDIO_UNAVAILABLE')
+  assert.equal(
+    (await f.readCachedAudio('https://cdn.example.com/audio.wav')).code,
+    'CACHED_AUDIO_UNAVAILABLE'
+  )
+  assert.deepEqual(requests, [url, url])
+  assert.equal(f.sent.length, 3)
+})
 
 function previewFixture({
   media,

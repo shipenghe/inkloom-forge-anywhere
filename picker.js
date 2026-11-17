@@ -7,7 +7,8 @@
   const outline = document.createElement('div')
   outline.style.cssText =
     'position:fixed;z-index:2147483647;pointer-events:none;display:none;border:3px solid #1a73e8;background:#1a73e822;box-sizing:border-box'
-  let hintMessage = '点击图片或视频 · Esc 取消'
+  const pickerHint = '点击图片、视频或音频 · Esc 取消'
+  let hintMessage = pickerHint
   const hint = document.createElement('div')
   const setHint = (value) => {
     hintMessage = value
@@ -18,8 +19,19 @@
   })
   hint.style.cssText =
     'position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483647;padding:10px 14px;color:white;background:#1c2736;border-radius:8px;font:14px system-ui,sans-serif;box-shadow:0 2px 12px #0006'
-  hint.textContent = setHint('点击图片或视频 · Esc 取消')
+  hint.textContent = setHint(pickerHint)
   document.documentElement.append(outline, hint)
+  let audioControlsStyle
+  try {
+    // Native audio controls consume mouse events before they reach the picker.
+    audioControlsStyle = new CSSStyleSheet()
+    audioControlsStyle.replaceSync(
+      'audio::-webkit-media-controls, audio::-webkit-media-controls-panel { pointer-events: none !important; }'
+    )
+    document.adoptedStyleSheets.push(audioControlsStyle)
+  } catch {
+    audioControlsStyle = null
+  }
   function visibleAt(element, x, y) {
     if (!element.isConnected || !Number.isFinite(x) || !Number.isFinite(y))
       return false
@@ -58,7 +70,7 @@
     const origin = path.find((node) => node instanceof Element)
     for (const node of path) {
       if (!(node instanceof Element)) continue
-      const direct = node.closest('img, video')
+      const direct = node.closest('img, video, audio')
       if (direct && visibleAt(direct, x, y)) return { element: direct }
     }
     // A full-card link or overlay can sit above a pointer-events:none image.
@@ -125,12 +137,12 @@
     }
     for (const layer of document.elementsFromPoint(x, y)) {
       if (!(layer instanceof Element)) continue
-      if (layer.matches('img, video')) addCandidate(layer)
+      if (layer.matches('img, video, audio')) addCandidate(layer)
       if (candidates.size > 1) return { element: null, ambiguous: true }
     }
     // Inspect only the nearest safe scope once, not every page ancestor on each
     // pointer move (large media feeds may contain thousands of other nodes).
-    for (const media of scope?.querySelectorAll('img, video') || []) {
+    for (const media of scope?.querySelectorAll('img, video, audio') || []) {
       addCandidate(media)
       if (candidates.size > 1) return { element: null, ambiguous: true }
     }
@@ -158,6 +170,10 @@
     document.removeEventListener('keydown', keydown, true)
     outline.remove()
     hint.remove()
+    if (audioControlsStyle)
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (style) => style !== audioControlsStyle
+      )
     delete globalThis.__inkloomPickerCleanup
   }
   function keydown(event) {
@@ -172,13 +188,16 @@
     const { element, ambiguous } = findMedia(event)
     if (!element) {
       hint.textContent = setHint(
-        ambiguous
-          ? '此处有多个图片或视频，请点击更明确的位置'
-          : '点击图片或视频 · Esc 取消'
+        ambiguous ? '此处有多个素材，请点击更明确的位置' : pickerHint
       )
       return
     }
-    const kind = element instanceof HTMLVideoElement ? 'video' : 'image'
+    const kind =
+      element.tagName === 'AUDIO'
+        ? 'audio'
+        : element instanceof HTMLVideoElement
+        ? 'video'
+        : 'image'
     const displayUrl =
       kind === 'image' ? element.currentSrc || element.src : null
     let url =

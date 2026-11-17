@@ -11,13 +11,13 @@ function fixture() {
     `
     class Element {
       constructor(tag='div', rect={left:0,top:0,right:100,bottom:100,width:100,height:100}) {
-        this.tag = tag; this.rect=rect; this.children=[]; this.parentElement=null;
+        this.tag = tag; this.tagName = tag.toUpperCase(); this.rect=rect; this.children=[]; this.parentElement=null;
         this.style={display:'block',visibility:'visible',opacity:'1',cssText:''}; this.isConnected=true;
       }
       append(...nodes) { for (const node of nodes) { node.parentElement=this; this.children.push(node) } }
       remove() { this.isConnected=false }
       matches(selector) {
-        if (selector === 'img, video') return this.tag === 'img' || this.tag === 'video'
+        if (selector === 'img, video, audio') return ['img', 'video', 'audio'].includes(this.tag)
         if (selector === 'a, button, [role="link"], [role="button"]') return this.tag === 'a' || this.tag === 'button'
         if (selector === 'dialog, [role="dialog"], [aria-modal="true"]') return this.tag === 'dialog'
         return false
@@ -59,7 +59,7 @@ function fixture() {
 
 test('shows a concise hint for selecting media', () => {
   const f = fixture()
-  assert.equal(f.ctx.created[1].textContent, '点击图片或视频 · Esc 取消')
+  assert.equal(f.ctx.created[1].textContent, '点击图片、视频或音频 · Esc 取消')
 })
 
 test('selects the image beneath a link overlay even when the image cannot receive pointer events', async () => {
@@ -86,7 +86,7 @@ test('refuses overlapping media instead of picking one', async () => {
   `)
   await f.click(f.ctx.overlay)
   assert.equal(f.ctx.sent.length, 0)
-  assert.match(f.ctx.created[1].textContent, /多个图片或视频/)
+  assert.match(f.ctx.created[1].textContent, /多个素材/)
 })
 
 test('ignores hidden descendants and does not mistake an unrelated modal for a media card', async () => {

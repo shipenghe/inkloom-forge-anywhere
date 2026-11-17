@@ -10,9 +10,11 @@
   function transparentLayer(node) {
     if (typeof node.textContent === 'string' && node.textContent.trim())
       return false
-    if (node.matches?.('canvas,svg,img,video,dialog,[role="dialog"]'))
+    if (node.matches?.('canvas,svg,img,video,audio,dialog,[role="dialog"]'))
       return false
-    if (node.querySelector?.('canvas,svg,img,video,dialog,[role="dialog"]'))
+    if (
+      node.querySelector?.('canvas,svg,img,video,audio,dialog,[role="dialog"]')
+    )
       return false
     const style = getComputedStyle(node)
     if (
@@ -73,7 +75,7 @@
       if (!parent) continue
       const box = link.getBoundingClientRect()
       if (!(box.width > 0 && box.height > 0)) continue
-      const matches = [...parent.querySelectorAll('img,video')].filter(
+      const matches = [...parent.querySelectorAll('img,video,audio')].filter(
         (media) => {
           const rect = media.getBoundingClientRect()
           if (!(rect.width > 0 && rect.height > 0)) return false
@@ -113,8 +115,8 @@
     }
     if (candidates.length !== 1) return null
     const media = candidates[0]
-    const mediaKind =
-      media.tagName.toLowerCase() === 'video' ? 'video' : 'image'
+    const tag = media.tagName.toLowerCase()
+    const mediaKind = tag === 'img' ? 'image' : tag
     const url =
       mediaKind === 'image'
         ? globalThis.__inkloomMediaFallback?.imageUrl(media) ||

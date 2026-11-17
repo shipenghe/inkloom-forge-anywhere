@@ -1319,7 +1319,12 @@ test('right-click exports displayed pixels without requesting access or fetching
   f.install()
   await waitFor(() => f.menu() !== null)
   assert.equal(f.menu().title, '打开 Forge')
-  assert.deepEqual(Array.from(f.menu().contexts), ['image', 'video', 'link'])
+  assert.deepEqual(Array.from(f.menu().contexts), [
+    'image',
+    'video',
+    'audio',
+    'link',
+  ])
   await f.send({ kind: 'SET_TARGET', tabId: 1 })
   assert.equal(f.menu().title, '发送到画布')
   const info = {
