@@ -287,7 +287,14 @@
             visibleAt(element, x, y)
           )
             candidates.push(element)
-          if (depth < 4 && element.shadowRoot)
+          // Player-sized components can contain the media surface. Skip the
+          // shadow trees of individual controls, menus, and tooltips.
+          if (
+            depth < 4 &&
+            element.shadowRoot &&
+            (sameBounds(element.getBoundingClientRect(), bounds) ||
+              getComputedStyle(element).display === 'contents')
+          )
             collect(element.shadowRoot, depth + 1)
         }
       }

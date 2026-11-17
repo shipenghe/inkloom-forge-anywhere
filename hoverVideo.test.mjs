@@ -814,15 +814,19 @@ test('pending video feedback survives source replacement and reports a delayed f
   )
 })
 
-test('right-click sends the video from a nested open shadow player', async () => {
+test('right-click finds nested video after skipping unrelated player control trees', async () => {
   const f = await fixture()
   f.run(`
     globalThis.player=new Element('demo-player'); document.body.append(player)
-    const inner=new Element('demo-video'); player.shadowRoot=player.attachShadow(); player.shadowRoot.append(inner)
+    const inner=new Element('demo-video'); player.shadowRoot=player.attachShadow();
+    const control=new Element('demo-control',{left:100,top:100,right:140,bottom:140,width:40,height:40});
+    control.shadowRoot=control.attachShadow();
+    control.shadowRoot.querySelectorAll=()=>Array.from({length:510},()=>new Element('div'));
+    player.shadowRoot.append(control,inner);
     inner.shadowRoot=inner.attachShadow(); inner.shadowRoot.append(Object.assign(new HTMLVideoElement('https://cdn.example/shadow.mp4'), {
       readyState:4,videoWidth:1920,videoHeight:1080
     }))
-    player.shadowRoot.querySelectorAll=()=>[inner]
+    player.shadowRoot.querySelectorAll=()=>player.shadowRoot.children
     inner.shadowRoot.querySelectorAll=()=>inner.shadowRoot.children
   `)
   await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.player))
