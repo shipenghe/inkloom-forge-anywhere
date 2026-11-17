@@ -1,13 +1,13 @@
 import { ADTS, BlobSource, FLAC, Input, MP3, MP4, OGG, WAVE } from 'mediabunny'
+import './audioFormats.js'
 
-const mimeByFormat = new Map([
-  [MP3, 'audio/mpeg'],
-  [WAVE, 'audio/wav'],
-  [MP4, 'audio/mp4'],
-  [ADTS, 'audio/aac'],
-  [OGG, 'audio/ogg'],
-  [FLAC, 'audio/flac'],
-])
+const parsers = { MP3, WAVE, MP4, ADTS, OGG, FLAC }
+const mimeByFormat = new Map(
+  Object.entries(parsers).map(([name, parser]) => [
+    parser,
+    globalThis.ForgeAudioFormats.formats[name].mime,
+  ])
+)
 
 export async function inspectAudioFile(blob) {
   const input = new Input({

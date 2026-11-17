@@ -7,14 +7,19 @@ const script = readFileSync(
   new URL('./qqMusicAudio.js', import.meta.url),
   'utf8'
 )
+const formatScript = readFileSync(
+  new URL('./audioFormats.js', import.meta.url),
+  'utf8'
+)
 const stream = 'https://ws6.stream.qqmusic.qq.com/preview.mp3'
 
-function fixture(duration = 60) {
+function fixture(duration = 60, trial = true) {
   const link = { pathname: '/n/ryqq_v2/songDetail/song' }
   const footer = {
     querySelector(selector) {
       if (selector.includes('songDetail')) return link
-      if (selector === '.player_music__try') return { textContent: '试听中' }
+      if (trial && selector === '.player_music__try')
+        return { textContent: '试听中' }
       if (selector === '.player_music__time')
         return { textContent: '00:06 / 04:29' }
     },
@@ -59,6 +64,7 @@ function fixture(duration = 60) {
     },
     window: { fetch: () => Promise.resolve(pending), addEventListener() {} },
   })
+  vm.runInContext(formatScript, context)
   vm.runInContext(script, context)
   return {
     created,
@@ -123,4 +129,30 @@ test('preserves the M4A format when joining the web player’s audio/mp4 ranges'
   await f.load(0, 'ab', m4a, 'audio/mp4')
   assert.equal(f.created[0].type, 'audio/mp4')
   assert.equal(await f.created[0].text(), 'abcd')
+})
+
+test('joins each supported format without requiring browser preview metadata for full songs', async () => {
+  for (const [extension, mime, canonical] of [
+    ['mp3', 'audio/mp3', 'audio/mpeg'],
+    ['wav', 'audio/x-wav', 'audio/wav'],
+    ['m4a', 'audio/x-m4a', 'audio/mp4'],
+    ['aac', 'audio/aac', 'audio/aac'],
+    ['ogg', 'application/ogg', 'audio/ogg'],
+    ['flac', 'application/octet-stream', 'audio/flac'],
+    ['', 'audio/flac', 'audio/flac'],
+  ]) {
+    const f = fixture(NaN, false)
+    const name = extension ? `source.${extension}` : 'source'
+    const url = new URL(name, stream).href
+    await f.load(0, 'ab', url, mime)
+    await f.load(0, 'ab', new URL('image.png', stream).href, 'image/png')
+    await f.load(2, 'cd', url, mime)
+    assert.equal(f.created[0].type, canonical)
+    assert.equal(await f.created[0].text(), 'abcd')
+    assert.equal(f.audio.preload, 'none')
+    assert.equal(
+      f.audio.attributes.get('data-forge-qq-song'),
+      '/n/ryqq_v2/songDetail/song'
+    )
+  }
 })

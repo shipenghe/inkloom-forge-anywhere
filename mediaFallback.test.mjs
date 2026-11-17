@@ -43,6 +43,38 @@ test('QQ Music maps a playback control to the one loaded track', () => {
   assert.equal(find(origin), null)
 })
 
+test('QQ Music can select complete bytes before native media metadata loads', () => {
+  const song = '/n/ryqq_v2/songDetail/sample'
+  let trial = false
+  const anchor = {
+    isConnected: true,
+    querySelector: (s) =>
+      s.includes('songDetail')
+        ? { pathname: song }
+        : trial
+        ? { textContent: '试听中' }
+        : null,
+  }
+  const control = { closest: () => anchor }
+  const origin = { closest: () => control }
+  const audio = {
+    src: 'blob:https://y.qq.com/fixture',
+    currentSrc: '',
+    readyState: 0,
+    getAttribute: () => song,
+    hasAttribute: () => false,
+  }
+  const context = vm.createContext({
+    location: { hostname: 'y.qq.com', pathname: '/n/ryqq_v2/player' },
+    document: { querySelectorAll: () => [], querySelector: () => audio },
+  })
+  vm.runInContext(sourceCode, context)
+  const find = context.__inkloomMediaFallback.qqMusicAudio
+  assert.equal(find(origin).element, audio)
+  trial = true
+  assert.equal(find(origin), null)
+})
+
 function fixture({
   current = 'https://i1.hdslb.com/a.jpg@120w.avif',
   src = '//i1.hdslb.com/a.jpg',

@@ -155,15 +155,18 @@
       element = document.querySelector('audio[data-forge-qq-song]')
       if (
         element?.getAttribute('data-forge-qq-song') !== song ||
-        element.readyState < 1 ||
-        !element.currentSrc.startsWith('blob:')
+        !element.src.startsWith('blob:')
       )
         return null
+      const trial = anchor
+        .querySelector('.player_music__try')
+        ?.textContent.includes('试听')
+      if (trial && !element.hasAttribute('data-forge-qq-trial')) return null
     }
     if (
       !element ||
       element.mediaKeys ||
-      !/^(https?:|blob:)/i.test(element.currentSrc)
+      !/^(https?:|blob:)/i.test(element.currentSrc || element.src)
     )
       return null
     return { element, anchor, control }

@@ -1,4 +1,4 @@
-// Observe MP3 and M4A responses that the QQ Music web player already fetched.
+// Observe audio responses that the QQ Music web player already fetched.
 ;(() => {
   if (
     location.hostname !== 'y.qq.com' ||
@@ -31,36 +31,21 @@
     track.blobUrl = null
   }
 
-  function streamSource(input) {
+  function streamUrl(input) {
     try {
       const value = input instanceof Request ? input.url : input
       if (typeof value !== 'string' && !(value instanceof URL)) return null
       const url = new URL(value, location.href)
-      const extension = url.pathname.match(/\.(mp3|m4a)$/i)?.[1].toLowerCase()
       return url.protocol === 'https:' &&
-        /(?:^|\.)stream\.qqmusic\.qq\.com$/.test(url.hostname) &&
-        extension
-        ? {
-            url: url.href,
-            mime: extension === 'm4a' ? 'audio/mp4' : 'audio/mpeg',
-          }
+        /(?:^|\.)stream\.qqmusic\.qq\.com$/.test(url.hostname)
+        ? url
         : null
     } catch {
       return null
     }
   }
 
-  function range(response, expectedMime) {
-    const mime = response.headers
-      .get('Content-Type')
-      ?.split(';')[0]
-      .toLowerCase()
-      .trim()
-    if (
-      mime !== expectedMime &&
-      !(mime === 'audio/mp3' && expectedMime === 'audio/mpeg')
-    )
-      return null
+  function range(response) {
     const length = Number(response.headers.get('Content-Length'))
     if (!Number.isSafeInteger(length) || length <= 0 || length > maxBytes)
       return null
@@ -97,13 +82,15 @@
     track.parts.clear()
     audio.setAttribute('data-forge-qq-audio', '')
     audio.hidden = true
-    audio.preload = 'metadata'
-    audio.addEventListener(
-      'loadedmetadata',
-      () => {
-        if (capture !== track || songInfo()?.song !== track.song) return
-        const notice = track.footer.querySelector('.player_music__try')
-        if (notice?.textContent.includes('试听')) {
+    const trial = track.footer
+      .querySelector('.player_music__try')
+      ?.textContent.includes('试听')
+    audio.preload = trial ? 'metadata' : 'none'
+    if (trial) {
+      audio.addEventListener(
+        'loadedmetadata',
+        () => {
+          if (capture !== track || songInfo()?.song !== track.song) return
           const time = track.footer.querySelector(
             '.player_music__time'
           )?.textContent
@@ -121,26 +108,39 @@
             clear()
             return
           }
-        }
-        audio.setAttribute('data-forge-qq-song', track.song)
-      },
-      { once: true }
-    )
-    audio.addEventListener(
-      'error',
-      () => {
-        if (capture === track) clear()
-      },
-      { once: true }
-    )
+          audio.setAttribute('data-forge-qq-trial', '')
+          audio.setAttribute('data-forge-qq-song', track.song)
+        },
+        { once: true }
+      )
+      audio.addEventListener(
+        'error',
+        () => {
+          if (capture === track) clear()
+        },
+        { once: true }
+      )
+    } else {
+      // The common importer inspects the bytes even when Chrome cannot preview them.
+      audio.setAttribute('data-forge-qq-song', track.song)
+    }
     audio.src = track.blobUrl
     document.body.append(audio)
   }
 
-  async function observe(track, response) {
-    if (capture !== track || track.audio || track.blocked) return
-    const part = range(response, track.mime)
-    if (!part || response.url !== track.url) return
+  async function observe(info, url, response) {
+    if (response.url !== url.href) return
+    const mime = globalThis.ForgeAudioFormats.responseMime(
+      response.headers.get('Content-Type'),
+      url.pathname
+    )
+    if (!mime) return
+    const part = range(response)
+    const current = songInfo()
+    if (!part || current?.song !== info.song || current.footer !== info.footer)
+      return
+    const track = fileCapture(info, url.href, mime)
+    if (track.blocked || track.audio) return
     if (track.total && track.total !== part.total) return
     if (
       track.parts.size >= 128 ||
@@ -166,12 +166,7 @@
     }
   }
 
-  window.fetch = function (input, ...args) {
-    const result = Reflect.apply(nativeFetch, this, [input, ...args])
-    const source = streamSource(input)
-    if (!source) return result
-    const info = songInfo()
-    if (!info) return result
+  function fileCapture(info, url, mime) {
     if (
       capture &&
       (capture.song !== info.song || capture.footer !== info.footer)
@@ -187,20 +182,26 @@
         attributes: true,
         attributeFilter: ['href'],
       })
-      capture = { ...info, ...source, observer, parts: new Map() }
+      capture = { ...info, url, mime, observer, parts: new Map() }
     }
     const track = capture
-    if (track.url === source.url) {
-      void result.then(
-        (response) => observe(track, response),
-        () => {}
-      )
-    } else if (!track.blocked) {
+    if (!track.blocked && (track.url !== url || track.mime !== mime)) {
       // Two different streams for the same visible song leave the source ambiguous.
       track.blocked = true
       track.parts.clear()
       discardAudio(track)
     }
+    return track
+  }
+
+  window.fetch = function (input, ...args) {
+    const result = Reflect.apply(nativeFetch, this, [input, ...args])
+    const url = streamUrl(input)
+    const info = url && songInfo()
+    if (info)
+      void result
+        .then((response) => observe(info, url, response))
+        .catch(() => {})
     return result
   }
   window.addEventListener('pagehide', clear)

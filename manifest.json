@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Forge Anywhere",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -25,7 +25,7 @@
         "https://y.qq.com/n/ryqq/player*",
         "https://y.qq.com/n/ryqq_v2/player*"
       ],
-      "js": ["qqMusicAudio.js"],
+      "js": ["audioFormats.js", "qqMusicAudio.js"],
       "run_at": "document_start",
       "world": "MAIN"
     }
