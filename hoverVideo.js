@@ -5,6 +5,7 @@
   const t = (value) => globalThis.ForgeI18n?.text(value) ?? value
   globalThis.__forgeHoverVideoCleanup?.()
   let media = null
+  let mediaControl = null
   let selectedUrl = null
   let lastPointer = null
   let stopped = false
@@ -65,12 +66,12 @@
   shadow.append(style, button, notice)
   document.documentElement.append(host)
 
-  function visibleAt(element, x, y) {
+  function visibleAt(element, x, y, audio = element?.tagName === 'AUDIO') {
     if (!element?.isConnected) return false
     const rect = element.getBoundingClientRect()
     if (
       rect.width < 80 ||
-      rect.height < (element.tagName === 'AUDIO' ? 18 : 60) ||
+      rect.height < (audio ? 18 : 60) ||
       x < rect.left ||
       x >= rect.right ||
       y < rect.top ||
@@ -182,10 +183,12 @@
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null
     const path = event.composedPath?.() || [event.target]
     for (const node of path) {
-      if (isMedia(node) && visibleAt(node, x, y)) return node
+      if (isMedia(node) && visibleAt(node, x, y)) return { element: node }
     }
     const origin = path.find((node) => node instanceof Element)
     if (!origin) return null
+    const player = globalThis.__inkloomMediaFallback?.qqMusicAudio?.(origin)
+    if (player && visibleAt(player.anchor, x, y, true)) return player
     const dialog = origin.closest(
       'dialog, [role="dialog"], [aria-modal="true"]'
     )
@@ -230,12 +233,14 @@
       }
       scope = scope.parentElement
     }
-    return resolveMedia(candidates, x, y)
+    const element = resolveMedia(candidates, x, y)
+    return element ? { element } : null
   }
 
   function hide() {
     serial++
     media = null
+    mediaControl = null
     selectedUrl = null
     host.style.display = 'none'
     notice.hidden = true
@@ -243,7 +248,7 @@
     clearTimeout(selectionTimer)
     clearTimeout(idleTimer)
   }
-  function place(element) {
+  function place(element, audio = element.tagName === 'AUDIO') {
     // A modal dialog makes unrelated document elements inert. Keep the entry
     // with the selected media's modal, and move it back for ordinary pages.
     const container =
@@ -260,7 +265,6 @@
       return
     }
     const right = Math.min(rect.right, innerWidth) - 8
-    const audio = element.tagName === 'AUDIO'
     const above = audio && rect.top >= 44
     const top = above ? rect.top - 44 : Math.max(rect.top, 0) + (audio ? 0 : 8)
     if (
@@ -309,40 +313,47 @@
     if (stopped || busy || !event.isTrusted) return
     if ((event.composedPath?.() || []).includes(host)) return
     lastPointer = { x: event.clientX, y: event.clientY }
-    const candidate = findMedia(event)
-    if (!candidate) {
+    const hit = findMedia(event)
+    if (!hit) {
       hide()
       return
     }
+    const { element: candidate, control = null } = hit
     const candidateUrl = candidate.currentSrc || candidate.src
     const generation = ++serial
     const allowed = await hasTarget(true)
     if (generation !== serial || stopped) return
     if (!allowed) return hide()
-    if (!visibleAt(candidate, event.clientX, event.clientY)) return hide()
-    if ((candidate.currentSrc || candidate.src) !== candidateUrl) return hide()
     media = candidate
+    mediaControl = control
     selectedUrl = candidateUrl
+    const anchor = selectionAnchor()
+    const audio = candidate.tagName === 'AUDIO'
+    if (!visibleAt(anchor, event.clientX, event.clientY, audio)) return hide()
     button.disabled = false
     button.title = t(targetAvailable ? '发送到画布' : '打开 Forge')
     button.setAttribute('aria-label', t(sendLabel(candidate)))
-    place(candidate)
+    place(anchor, audio)
     watchSelection()
     clearTimeout(idleTimer)
     idleTimer = setTimeout(hide, 8000)
   }
+  function selectionAnchor() {
+    if (!media?.isConnected || (media.currentSrc || media.src) !== selectedUrl)
+      return null
+    if (!mediaControl) return media
+    const player = globalThis.__inkloomMediaFallback.qqMusicAudio(mediaControl)
+    return player?.element === media ? player.anchor : null
+  }
   function updatePosition() {
     // Keep the in-flight feedback anchored even when playback swaps its source.
     if (busy) return
-    if (
-      media &&
-      (!media.isConnected ||
-        (media.currentSrc || media.src) !== selectedUrl ||
-        !lastPointer ||
-        !visibleAt(media, lastPointer.x, lastPointer.y))
-    )
+    if (!media) return
+    const anchor = selectionAnchor()
+    const audio = media.tagName === 'AUDIO'
+    if (!lastPointer || !visibleAt(anchor, lastPointer.x, lastPointer.y, audio))
       hide()
-    else if (media) place(media)
+    else place(anchor, audio)
   }
   function watchSelection() {
     clearTimeout(selectionTimer)
@@ -387,6 +398,7 @@
   }
   function changedSelection() {
     media = null
+    mediaControl = null
     selectedUrl = null
     clearTimeout(selectionTimer)
     clearTimeout(idleTimer)
@@ -416,7 +428,7 @@
       return
     }
     const selected = media
-    if (!selected?.isConnected) return changedSelection()
+    if (!selectionAnchor()) return changedSelection()
     const url = selected.currentSrc || selected.src
     if (url !== selectedUrl) return changedSelection()
     const isData = typeof url === 'string' && /^data:/i.test(url)
@@ -454,10 +466,7 @@
         temporaryUrl = URL.createObjectURL(blob)
         transferUrl = temporaryUrl
       }
-      if (
-        !selected.isConnected ||
-        (selected.currentSrc || selected.src) !== url
-      )
+      if (!selectionAnchor() || media !== selected || selectedUrl !== url)
         return changedSelection()
       if (mediaKind === 'image') globalThis.__inkloomSelectedImage = selected
       const source =
@@ -489,8 +498,7 @@
       clearTimeout(pendingTimer)
       if (temporaryUrl) URL.revokeObjectURL(temporaryUrl)
       busy = false
-      button.disabled =
-        !media?.isConnected || (media.currentSrc || media.src) !== selectedUrl
+      button.disabled = !selectionAnchor()
       button.setAttribute('aria-busy', 'false')
       button.textContent = iconFailed ? 'FA' : ''
       if (!iconFailed) button.append(icon)

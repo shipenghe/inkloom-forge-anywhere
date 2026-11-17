@@ -60,6 +60,26 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
   return { ctx, run: (source) => vm.runInContext(source, ctx) }
 }
 
+test('anchors audio to the QQ Music bar and refuses a changed track', async () => {
+  const f = await fixture()
+  f.run(`
+    globalThis.bar=new Element('div'); document.body.append(bar)
+    globalThis.track=new Element('audio'); track.currentSrc='https://cdn.example/one.mp3'
+    document.body.append(track)
+    globalThis.__inkloomMediaFallback={qqMusicAudio: el=>el===bar ? {element:track,anchor:bar,control:bar} : null}
+  `)
+  await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.bar))
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  assert.equal(f.ctx.created[2].attrs['aria-label'], '发送音频到画布')
+  f.ctx.track.currentSrc = 'https://cdn.example/two.mp3'
+  await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+  assert.equal(
+    f.ctx.sent.some((m) => m.kind === 'HOVER_MEDIA_SEND'),
+    false
+  )
+  f.ctx.__forgeHoverVideoCleanup()
+})
+
 test('button capture receives the first click before document menus and sends once', async () => {
   const f = await fixture()
   f.run(`globalThis.video=new HTMLVideoElement();document.body.append(video)`)

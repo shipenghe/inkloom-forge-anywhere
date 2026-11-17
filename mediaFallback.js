@@ -1,4 +1,4 @@
-// Select only an alternative that the same <picture> explicitly provides.
+// Resolve media that a page exposes through an alternate element or control.
 ;(() => {
   const space = /[\t\n\f\r ]/
   const safeUrl = (value, base) => {
@@ -127,5 +127,30 @@
     return current
   }
 
-  globalThis.__inkloomMediaFallback = { imageUrl }
+  function qqMusicAudio(origin) {
+    if (
+      location.hostname !== 'y.qq.com' ||
+      !/^\/n\/ryqq(?:_v2)?\/player\/?$/.test(location.pathname)
+    )
+      return null
+    const control = origin?.closest?.(
+      '.player_music, .btn_big_play, .player_progress:not(.player_voice)'
+    )
+    const anchor = control?.closest('.player__ft')
+    if (!anchor?.isConnected) return null
+
+    // QQ Music appends its zero-size audio element directly to the body.
+    const tracks = [...document.querySelectorAll('body > audio')].filter(
+      (audio) => audio.readyState >= 1 && !audio.error && !audio.ended
+    )
+    const playing = tracks.filter((audio) => !audio.paused)
+    const candidates = playing.length ? playing : tracks
+    if (candidates.length !== 1) return null
+    const [element] = candidates
+    if (element.mediaKeys || !/^(https?:|blob:)/i.test(element.currentSrc))
+      return null
+    return { element, anchor, control }
+  }
+
+  globalThis.__inkloomMediaFallback = { imageUrl, qqMusicAudio }
 })()

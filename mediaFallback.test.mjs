@@ -8,6 +8,41 @@ const sourceCode = await readFile(
   'utf8'
 )
 
+test('QQ Music maps a playback control to the one loaded track', () => {
+  const anchor = { isConnected: true }
+  const control = {
+    closest: (selector) => (selector === '.player__ft' ? anchor : null),
+  }
+  const origin = { closest: () => control }
+  const audio = {
+    readyState: 4,
+    paused: false,
+    currentSrc: 'blob:https://y.qq.com/fixture',
+  }
+  const old = { ...audio, paused: true }
+  const tracks = [audio, old]
+  const location = { hostname: 'y.qq.com', pathname: '/n/ryqq_v2/player' }
+  const context = vm.createContext({
+    location,
+    document: { querySelectorAll: () => tracks },
+  })
+  vm.runInContext(sourceCode, context)
+  const find = context.__inkloomMediaFallback.qqMusicAudio
+  assert.equal(find(origin).element, audio)
+  assert.equal(find(origin).anchor, anchor)
+  assert.equal(find({ closest: () => null }), null)
+  audio.mediaKeys = {}
+  assert.equal(find(origin), null)
+  delete audio.mediaKeys
+  old.paused = false
+  assert.equal(find(origin), null)
+  old.readyState = 0
+  audio.paused = true
+  assert.equal(find(origin).element, audio)
+  location.pathname = '/n/ryqq_v2/songDetail/sample'
+  assert.equal(find(origin), null)
+})
+
 function fixture({
   current = 'https://i1.hdslb.com/a.jpg@120w.avif',
   src = '//i1.hdslb.com/a.jpg',

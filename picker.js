@@ -3,7 +3,6 @@
   if (globalThis.ForgeI18n) await globalThis.ForgeI18n.ready
   const t = (value) => globalThis.ForgeI18n?.text(value) ?? value
   globalThis.__inkloomPickerCleanup?.()
-  let hovered = null
   const outline = document.createElement('div')
   outline.style.cssText =
     'position:fixed;z-index:2147483647;pointer-events:none;display:none;border:3px solid #1a73e8;background:#1a73e822;box-sizing:border-box'
@@ -73,6 +72,8 @@
       const direct = node.closest('img, video, audio')
       if (direct && visibleAt(direct, x, y)) return { element: direct }
     }
+    const player = globalThis.__inkloomMediaFallback?.qqMusicAudio?.(origin)
+    if (player && visibleAt(player.anchor, x, y)) return player
     // A full-card link or overlay can sit above a pointer-events:none image.
     // Inspect hit elements and their descendants, but never scan the document
     // root, and refuse overlapping candidates instead of choosing arbitrarily.
@@ -149,12 +150,12 @@
     return { element: candidates.size === 1 ? [...candidates][0] : null }
   }
   function move(event) {
-    hovered = findMedia(event).element
-    if (!hovered) {
+    const { element, anchor = element } = findMedia(event)
+    if (!anchor) {
       outline.style.display = 'none'
       return
     }
-    const rect = hovered.getBoundingClientRect()
+    const rect = anchor.getBoundingClientRect()
     Object.assign(outline.style, {
       display: 'block',
       left: `${rect.left}px`,
