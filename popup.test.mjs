@@ -845,11 +845,11 @@ test('the panel plays the locally stored video for the current successful delive
   assert.deepEqual(events, ['play', 'pause', 'load'])
 })
 
-test('the audio card distinguishes previews and verified full tracks from duration alone', async () => {
+test('the audio card shows file-relative intervals and labels verified audio scope', async () => {
   const cases = [
-    ['preview', 60, '试听片段 01:00'],
-    ['full', 189, '全曲 03:09'],
-    [undefined, 31, '00:31 · 已交给画布'],
+    ['preview', 60, '试听片段 00:00–01:00'],
+    ['full', 189, '全曲 00:00–03:09'],
+    [undefined, 31, '00:00–00:31 · 已交给画布'],
   ]
   for (const [audioScope, duration, expected] of cases) {
     const f = fixture({

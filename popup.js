@@ -346,6 +346,9 @@ function formatMediaTime(seconds) {
     .join(':')
   return time
 }
+function formatMediaRange(start, end) {
+  return `${formatMediaTime(start)}–${formatMediaTime(end)}`
+}
 function renderMediaCard() {
   const selection = displayedSelection()
   const legacy =
@@ -423,9 +426,10 @@ function renderMediaCard() {
         : '',
       item.mediaKind === 'video'
         ? range
-          ? `${isClip ? '片段' : '全片'} ${formatMediaTime(
-              item.sourceStart
-            )}–${formatMediaTime(item.sourceEnd)}`
+          ? `${isClip ? '片段' : '全片'} ${formatMediaRange(
+              item.sourceStart,
+              item.sourceEnd
+            )}`
           : isClip
           ? '视频片段'
           : ''
@@ -434,7 +438,9 @@ function renderMediaCard() {
       item.mediaKind === 'audio'
         ? [
             audioLabel,
-            Number.isFinite(duration) ? formatMediaTime(duration) : '',
+            Number.isFinite(duration) && duration > 0
+              ? formatMediaRange(0, duration)
+              : '',
           ]
             .filter(Boolean)
             .join(' ')
