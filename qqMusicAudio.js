@@ -60,6 +60,14 @@
     return { start, end: last + 1, total }
   }
 
+  function listedDuration(footer) {
+    const time = footer.querySelector('.player_music__time')?.textContent
+    return time
+      ?.match(/\/\s*(\d+(?::\d{2}){1,2})\s*$/)?.[1]
+      .split(':')
+      .reduce((seconds, field) => 60 * seconds + Number(field), 0)
+  }
+
   function expose(track) {
     const sorted = [...track.parts.values()].sort((a, b) => a.start - b.start)
     let offset = 0
@@ -91,13 +99,7 @@
         'loadedmetadata',
         () => {
           if (capture !== track || songInfo()?.song !== track.song) return
-          const time = track.footer.querySelector(
-            '.player_music__time'
-          )?.textContent
-          const duration = time
-            ?.match(/\/\s*(\d+(?::\d{2}){1,2})\s*$/)?.[1]
-            .split(':')
-            .reduce((seconds, field) => 60 * seconds + Number(field), 0)
+          const duration = listedDuration(track.footer)
           // A trial may only expose a short file, never the underlying full track.
           if (
             !Number.isFinite(duration) ||
@@ -122,6 +124,9 @@
       )
     } else {
       // The common importer inspects the bytes even when Chrome cannot preview them.
+      const duration = listedDuration(track.footer)
+      if (Number.isFinite(duration) && duration > 0)
+        audio.setAttribute('data-forge-qq-duration', String(duration))
       audio.setAttribute('data-forge-qq-song', track.song)
     }
     audio.src = track.blobUrl

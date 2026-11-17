@@ -218,6 +218,31 @@ test('video preview uses only the already decoded current frame of the exact vid
   assert.equal(f.sent.length, 0)
 })
 
+test('only the selected QQ Music audio supplies its trial or listed track duration', async () => {
+  const url = 'blob:https://y.qq.com/selected-audio'
+  const attrs = new Map([
+    ['data-forge-qq-song', '/n/ryqq_v2/songDetail/sample'],
+    ['data-forge-qq-trial', ''],
+  ])
+  const media = {
+    src: url,
+    isConnected: true,
+    hasAttribute: (key) => attrs.has(key),
+    getAttribute: (key) => attrs.get(key),
+  }
+  const f = previewFixture({ media: [media] })
+  const selection = { url, mediaKind: 'audio' }
+  assert.equal((await f.readPreview(selection)).audioScope, 'preview')
+  attrs.delete('data-forge-qq-trial')
+  attrs.set('data-forge-qq-duration', '189')
+  assert.equal((await f.readPreview(selection)).audioTrackDuration, 189)
+  assert.equal(
+    (await f.readPreview({ ...selection, url: url + '-other' }))
+      .audioTrackDuration,
+    undefined
+  )
+})
+
 test('origin-tainted preview pixels retain only a short source title', async () => {
   const url = 'https://cdn.example.com/selected-video.mp4'
   const video = {

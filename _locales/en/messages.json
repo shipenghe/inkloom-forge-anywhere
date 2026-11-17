@@ -47,6 +47,14 @@
     "message": "Full video",
     "description": "全片"
   },
+  "text_f753f164d6c7": {
+    "message": "Full track",
+    "description": "全曲"
+  },
+  "text_a60bb6f3bd16": {
+    "message": "Preview clip",
+    "description": "试听片段"
+  },
   "text_6793241958c9": {
     "message": "Turn off auto-prepare",
     "description": "关闭自动准备视频"

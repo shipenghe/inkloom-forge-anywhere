@@ -33,7 +33,20 @@
       if (title && !/^https?:\/\//i.test(title)) result.title = title
       if (!image && Number.isFinite(media.duration) && media.duration > 0)
         result.duration = media.duration
-      if (audio) return result
+      if (audio) {
+        if (media.hasAttribute?.('data-forge-qq-song')) {
+          if (media.hasAttribute('data-forge-qq-trial'))
+            result.audioScope = 'preview'
+          else {
+            const duration = Number(
+              media.getAttribute('data-forge-qq-duration')
+            )
+            if (Number.isFinite(duration) && duration > 0)
+              result.audioTrackDuration = duration
+          }
+        }
+        return result
+      }
       const width = image ? media.naturalWidth : media.videoWidth
       const height = image ? media.naturalHeight : media.videoHeight
       if (

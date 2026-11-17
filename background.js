@@ -126,6 +126,14 @@ async function sourceMetadata(selection) {
       ...(Number.isFinite(reply.duration) && reply.duration > 0
         ? { sourceDuration: reply.duration }
         : {}),
+      ...(selection.mediaKind === 'audio' && reply.audioScope === 'preview'
+        ? { audioScope: 'preview' }
+        : {}),
+      ...(selection.mediaKind === 'audio' &&
+      Number.isFinite(reply.audioTrackDuration) &&
+      reply.audioTrackDuration > 0
+        ? { audioTrackDuration: reply.audioTrackDuration }
+        : {}),
     }
   } catch {
     return {}
@@ -1007,7 +1015,7 @@ async function runImport(contextSelection, existingTransfer) {
       mediaActivity.title ||= prior.title || ''
     }
     await save({ mediaActivity, ...(!contextSelection ? { selection } : {}) })
-    const metadata = await sourceMetadata(selection)
+    const { audioTrackDuration, ...metadata } = await sourceMetadata(selection)
     await updateActivity(selection.mediaId, metadata).catch(() => {})
     const target = await currentTarget()
     t.target = target
@@ -1167,6 +1175,10 @@ async function runImport(contextSelection, existingTransfer) {
         : selection.mse
         ? '视频片段'
         : '视频'
+    const fullTrack =
+      Number.isFinite(t.audio?.duration) &&
+      Number.isFinite(audioTrackDuration) &&
+      Math.abs(t.audio.duration - audioTrackDuration) <= 1
     await updateActivity(selection.mediaId, {
       status: 'sent',
       filename: t.filename,
@@ -1177,6 +1189,7 @@ async function runImport(contextSelection, existingTransfer) {
           Number.isFinite(t.audio.duration) && t.audio.duration > 0
             ? t.audio.duration
             : metadata.sourceDuration,
+        ...(fullTrack && !metadata.audioScope ? { audioScope: 'full' } : {}),
       }),
       ...(t.clipRange || {
         isClip: false,

@@ -403,6 +403,17 @@ function renderMediaCard() {
     Number.isFinite(item.sourceEnd) &&
     item.sourceStart >= 0 &&
     item.sourceEnd > item.sourceStart
+  const duration = item.duration ?? item.sourceDuration
+  const audioLabel =
+    item.mediaKind === 'audio'
+      ? t(
+          item.audioScope === 'preview'
+            ? '试听片段'
+            : item.audioScope === 'full'
+            ? '全曲'
+            : ''
+        )
+      : ''
   selectionDetailNode.textContent = t(
     [
       status === 'selected' &&
@@ -420,11 +431,15 @@ function renderMediaCard() {
           : ''
         : '',
       item.hasAudio === false ? '无声' : '',
-      item.mediaKind === 'audio' &&
-      Number.isFinite(item.duration ?? item.sourceDuration)
-        ? formatMediaTime(item.duration ?? item.sourceDuration)
+      item.mediaKind === 'audio'
+        ? [
+            audioLabel,
+            Number.isFinite(duration) ? formatMediaTime(duration) : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
         : '',
-      status === 'sent' && (item.mediaKind !== 'video' || !range)
+      status === 'sent' && !audioLabel && (item.mediaKind !== 'video' || !range)
         ? '已交给画布'
         : '',
     ]

@@ -845,6 +845,27 @@ test('the panel plays the locally stored video for the current successful delive
   assert.deepEqual(events, ['play', 'pause', 'load'])
 })
 
+test('the audio card distinguishes previews and verified full tracks from duration alone', async () => {
+  const cases = [
+    ['preview', 60, '试听片段 01:00'],
+    ['full', 189, '全曲 03:09'],
+    [undefined, 31, '00:31 · 已交给画布'],
+  ]
+  for (const [audioScope, duration, expected] of cases) {
+    const f = fixture({
+      mediaActivity: {
+        id: 'sent',
+        status: 'sent',
+        mediaKind: 'audio',
+        audioScope,
+        duration,
+      },
+    })
+    await f.ready()
+    assert.equal(f.elements['selection-detail'].textContent, expected)
+  }
+})
+
 test('new activity statuses replace previous feedback without reviving a stale selection', async () => {
   const f = fixture({
     target: { tabId: 99, title: '测试画布' },
