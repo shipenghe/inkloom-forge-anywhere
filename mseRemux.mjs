@@ -2,12 +2,14 @@
 // contiguous unencrypted fragments belonging to one selected media are accepted.
 import {
   ALL_FORMATS,
+  BlobSource,
   BufferSource,
   BufferTarget,
   EncodedAudioPacketSource,
   EncodedPacketSink,
   EncodedVideoPacketSource,
   Input,
+  MP4,
   Mp4OutputFormat,
   Output,
 } from 'mediabunny'
@@ -114,6 +116,26 @@ function validateMp4(bytes) {
   }
   if (!header || !init || !fragments || waitingData)
     throw new Error('缺少初始化数据或可用的视频片段')
+}
+
+export async function matchesFragmentedVideoDuration(blob, expectedDuration) {
+  if (!Number.isFinite(expectedDuration) || expectedDuration <= 0) return false
+  let input
+  try {
+    // The same ordering and encryption checks apply to fragments in a file.
+    validateMp4(new Uint8Array(await blob.arrayBuffer()))
+    input = new Input({ source: new BlobSource(blob), formats: [MP4] })
+    const video = await input.getPrimaryVideoTrack()
+    if (!video?.codec) return false
+    const start = await input.getFirstTimestamp()
+    const end = await input.computeDuration()
+    const tolerance = Math.min(0.25, expectedDuration / 20)
+    return Math.abs(end - start - expectedDuration) <= tolerance
+  } catch {
+    return false
+  } finally {
+    input?.dispose()
+  }
 }
 
 function concatStreams(streams) {

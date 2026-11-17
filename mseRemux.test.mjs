@@ -13,7 +13,10 @@ import {
   Mp4OutputFormat,
   Output,
 } from 'mediabunny'
-import { remuxCapturedVideo } from './mseRemux.mjs'
+import {
+  matchesFragmentedVideoDuration,
+  remuxCapturedVideo,
+} from './mseRemux.mjs'
 
 const open = (bytes) =>
   new Input({ source: new BufferSource(bytes), formats: ALL_FORMATS })
@@ -63,6 +66,17 @@ async function hash(track) {
     h.update(packet.data)
   return h.digest('hex')
 }
+
+test('accepts a standalone fragmented file only when structurally complete for the player duration', async () => {
+  const blob = new Blob([video], { type: 'video/mp4' })
+  assert.equal(await matchesFragmentedVideoDuration(blob, 15), true)
+  assert.equal(await matchesFragmentedVideoDuration(blob, 30), false)
+  assert.equal(await matchesFragmentedVideoDuration(blob), false)
+  assert.equal(
+    await matchesFragmentedVideoDuration(blob.slice(0, blob.size - 1), 15),
+    false
+  )
+})
 
 test('remuxes contiguous separate tracks without re-encoding video or losing audio', async () => {
   const result = await remuxCapturedVideo(

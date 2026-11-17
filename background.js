@@ -584,7 +584,7 @@ async function boundedBlob(response, mediaKind) {
     type: response.headers.get('content-type')?.split(';')[0] || '',
   })
 }
-async function completeMp4(blob) {
+async function completeMp4(blob, expectedDuration) {
   let offset = 0
   let moov = false
   let mdat = false
@@ -596,9 +596,14 @@ async function completeMp4(blob) {
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
     let size = view.getUint32(0)
     const type = String.fromCharCode(...bytes.slice(4, 8))
-    // A standalone MSE fragment can contain initialization boxes and mdat;
-    // do not misrepresent such fragments as a complete video.
-    if (type === 'moof') return false
+    if (type === 'moof') {
+      // An initialization segment alone cannot prove a fragmented file is
+      // complete. Compare its full duration with the selected player.
+      return !!(await globalThis.__inkloomMseRemux?.matchesFragmentedVideoDuration?.(
+        blob,
+        expectedDuration
+      ))
+    }
     let header = 8
     if (size === 1) {
       if (bytes.length < 16) return false
@@ -660,7 +665,7 @@ async function completeWebm(blob) {
   }
   return tracks && cluster
 }
-async function checkedVideoResponse(response) {
+async function checkedVideoResponse(response, expectedDuration) {
   if (!response.ok) throw new Error(`无法获取媒体（HTTP ${response.status}）`)
   if (response.status === 206 || response.headers.get('content-range'))
     throw new Error('获取到的视频不完整')
@@ -697,7 +702,7 @@ async function checkedVideoResponse(response) {
     head[2] === 0xdf &&
     head[3] === 0xa3
   if (
-    (mp4 && (await completeMp4(blob))) ||
+    (mp4 && (await completeMp4(blob, expectedDuration))) ||
     (webm && (await completeWebm(blob)))
   )
     return new Blob([blob], {
@@ -1124,7 +1129,10 @@ async function runImport(contextSelection, existingTransfer) {
           )
         }
         if (selection.mediaKind === 'video')
-          blob = await checkedVideoResponse(response)
+          blob = await checkedVideoResponse(
+            response,
+            metadata.sourceDuration
+          )
         else {
           if (!response.ok)
             throw new Error(`无法获取媒体（HTTP ${response.status}）`)
