@@ -19,7 +19,7 @@
 | 哔哩哔哩 | ✅ | ✅ | 中文教程和创作参考。v1.0.37 实站封面发送通过，静态 AVIF 可转 PNG，视频可发送已缓冲片段。[封面样本](https://www.bilibili.com/v/popular/all) · [视频样本](https://www.bilibili.com/video/BV1fY4y1M7Tj/) · [全景样本](https://www.bilibili.com/video/BV1Xq4y177bV/) |
 | YouTube | 🟡 | 🟡 | 长视频和 Shorts。本轮视频页导航超时，先前缩略图与播放器也未加载。[列表样本](https://www.youtube.com/@BlenderOfficial/videos) · [视频样本](https://www.youtube.com/watch?v=YE7VzlLtp-4) · [Shorts 样本](https://www.youtube.com/shorts/-zWwcOVZd4M) |
 | Instagram | 🟡 | 🟡 | 海外图集和 Reels。v1.0.36 两条 Reel 报片段不足；v1.0.37 对照通过，实站复测受浏览器访问限制。[图片样本](https://www.instagram.com/p/DelZ5g8l8Pr/) · [原视频样本](https://www.instagram.com/reel/DehZj9wggt0/) · [海冰 Reel](https://www.instagram.com/reel/DUa5b_BDmmD/) · [Earthset Reel](https://www.instagram.com/reel/DeTUk4sDSp-/) |
-| TikTok | 🟡 | ❌ | 海外竖屏短视频。图集图片已加载，但反复出现登录／广告弹层，无法发送；视频页导航超时，旧样本曾无法选取。[图片样本](https://www.tiktok.com/@nomadcentraka/photo/7571216638826122514) · [视频样本](https://www.tiktok.com/@nasa/video/7695060950394703118) |
+| TikTok | 🟡 | 🟡 | 海外竖屏短视频。图集图片已加载，但反复出现登录／广告弹层，无法发送；视频页导航超时，旧样本曾无法选取，当前版本尚未完成验证。[图片样本](https://www.tiktok.com/@nomadcentraka/photo/7571216638826122514) · [视频样本](https://www.tiktok.com/@nasa/video/7695060950394703118) |
 | Mixkit | — | ✅ | 免费视频素材。本轮右键发送 30 秒全片并播放通过，先前也验证过刷新画布后播放。[视频样本](https://mixkit.co/free-stock-video/waves-reaching-the-shore-1925/) |
 | Wikimedia Commons | 🟡 | — | 公开素材对照。本轮文件页导航超时。[图片样本](https://commons.wikimedia.org/wiki/File:JPEG_example_flower.jpg) |
 
