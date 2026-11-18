@@ -13,7 +13,7 @@
 | Unsplash | 支持 | — | 摄影图库。详情页主图右键发送通过。[图片样本](https://unsplash.com/photos/a-lake-in-front-of-a-mountain-AxSaRriVy0E) |
 | Pixabay | 支持 | 支持 | 图库和视频库。主图及 31 秒视频均由右键发送，画布可解码。[图片样本](https://pixabay.com/photos/mountains-lake-nature-landscape-7138605/) · [视频样本](https://pixabay.com/videos/waves-water-sea-ocean-landscape-22183/) |
 | Google 图片 | 支持 | — | 常用找图入口。搜索结果图可发送，有时遇到验证。[搜索样本](https://www.google.com/search?tbm=isch&q=NASA%20Pillars%20of%20Creation) |
-| 百度图片 | 支持 | — | 常用找图入口。缩略图和 2160×3840 原图均可发送；详情页右键浮层点击无响应，面板选取可发送。[搜索样本](https://image.baidu.com/search/index?tn=baiduimage&word=NASA%20Pillars%20of%20Creation) |
+| 百度图片 | 支持 | — | 常用找图入口。缩略图和原图可发送；详情页 Chrome 右键菜单及面板选取成功，悬浮图标点击无响应。[搜索样本](https://image.baidu.com/search/index?tn=baiduimage&word=NASA%20Pillars%20of%20Creation) |
 | Behance | 待测 | 待测 | 设计作品集。两样本导航超时，未进入素材页。[图片样本](https://www.behance.net/gallery/65590023/Adobe-MAX-2018-identity-1-event-graphics) · [视频样本](https://www.behance.net/gallery/249474299/Showreel-2026-Motion-Design) |
 | 抖音 | 支持 | 支持 | 国内图文和短视频。正文图可发送。连续播放可发送片段，本轮回归送出 28 秒。[图片样本](https://www.douyin.com/note/7616399587141737704) · [连续播放样本](https://www.douyin.com/video/7705256140821221561) · [跳播样本](https://www.douyin.com/video/7447854137779277115) |
 | 哔哩哔哩 | 支持 | 支持 | 中文教程和创作参考。v1.0.37 实站封面发送通过，静态 AVIF 可转 PNG，视频可发送已缓冲片段。[封面样本](https://www.bilibili.com/v/popular/all) · [视频样本](https://www.bilibili.com/video/BV1fY4y1M7Tj/) · [全景样本](https://www.bilibili.com/video/BV1Xq4y177bV/) |
