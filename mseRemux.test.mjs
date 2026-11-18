@@ -169,15 +169,90 @@ test('rejects incomplete, oversized and clearly encrypted data', async () => {
   await assert.rejects(remuxCapturedVideo([stream('video', encrypted)]), /加密/)
 })
 
-test('rejects a missing fragmented MP4 sequence number', async () => {
-  const broken = video.slice()
-  const text = new TextDecoder('latin1').decode(broken)
+test('uses continuous captured packet times despite numbering gaps without relaxing standalone validation', async () => {
+  const numbered = video.slice()
+  const text = new TextDecoder('latin1').decode(numbered)
   const first = text.indexOf('mfhd')
   const second = text.indexOf('mfhd', first + 4)
   assert.ok(second > first)
-  const view = new DataView(broken.buffer, broken.byteOffset, broken.byteLength)
+  const view = new DataView(
+    numbered.buffer,
+    numbered.byteOffset,
+    numbered.byteLength
+  )
   view.setUint32(second + 8, view.getUint32(second + 8) + 2)
-  await assert.rejects(remuxCapturedVideo([stream('video', broken)]), /不连续/)
+  assert.equal(
+    await matchesFragmentedVideoDuration(new Blob([numbered]), 15),
+    false
+  )
+  const result = await remuxCapturedVideo([stream('video', numbered)])
+  const source = open(video)
+  const output = open(await result.blob.arrayBuffer())
+  try {
+    assert.ok(Math.abs(result.duration - 15) < 0.1)
+    assert.equal(
+      await hash(await output.getPrimaryVideoTrack()),
+      await hash(await source.getPrimaryVideoTrack())
+    )
+  } finally {
+    source.dispose()
+    output.dispose()
+  }
+  const decodeTime = text.indexOf('tfdt', second)
+  assert.ok(decodeTime > second)
+  numbered.set(new TextEncoder().encode('free'), decodeTime)
+  await assert.rejects(
+    remuxCapturedVideo([stream('video', numbered)]),
+    /片段顺序/
+  )
+})
+
+test('exports one keyframe-led A/V interval when a captured fragment is missing', async () => {
+  const moofs = []
+  const view = new DataView(audio.buffer, audio.byteOffset, audio.byteLength)
+  for (let offset = 0; offset < audio.length; ) {
+    const length = view.getUint32(offset)
+    assert.ok(length > 7)
+    const type = String.fromCharCode(...audio.subarray(offset + 4, offset + 8))
+    if (type === 'moof') moofs.push(offset)
+    offset += length
+  }
+  assert.ok(moofs.length > 5)
+  const startOfMissingFragment = moofs[4]
+  const startOfNextFragment = moofs[5]
+  const prefix = audio.subarray(0, startOfMissingFragment)
+  const input = open(prefix)
+  const expectedAudioEnd = await (
+    await input.getPrimaryAudioTrack()
+  ).computeDuration()
+  input.dispose()
+
+  const result = await remuxCapturedVideo(
+    [
+      stream('video', video),
+      {
+        mime: 'audio/mp4',
+        chunks: [prefix, audio.subarray(startOfNextFragment)],
+      },
+    ],
+    { requireAudio: true }
+  )
+  assert.ok(result.sourceStart < 0.2)
+  assert.ok(Math.abs(result.sourceEnd - expectedAudioEnd) < 0.16)
+  const output = open(await result.blob.arrayBuffer())
+  try {
+    const outputVideo = await output.getPrimaryVideoTrack()
+    const outputAudio = await output.getPrimaryAudioTrack()
+    assert.equal(
+      (await new EncodedPacketSink(outputVideo).getFirstPacket()).type,
+      'key'
+    )
+    assert.ok(
+      Math.abs((await outputAudio.computeDuration()) - result.duration) < 0.16
+    )
+  } finally {
+    output.dispose()
+  }
 })
 
 test('the checked-in classic worker bundle exposes the same remux API without imports', async () => {

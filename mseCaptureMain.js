@@ -46,6 +46,30 @@
   const MAX_PARTS = 4096
   const MAX_SOURCES = 16
   const MAX_SOURCE_URLS = 64
+  // Some MSE players append a complete moov without a file-type box. This
+  // generic brand wraps that unchanged movie metadata for the MP4 parser.
+  const defaultFileType = Uint8Array.of(
+    0,
+    0,
+    0,
+    20,
+    102,
+    116,
+    121,
+    112,
+    105,
+    115,
+    111,
+    54,
+    0,
+    0,
+    0,
+    0,
+    105,
+    115,
+    111,
+    54
+  )
   const streams = new WeakMap()
   const sourceByUrl = new Map()
   const unsupportedSources = new WeakSet()
@@ -53,6 +77,8 @@
   let selected = null
   let provisional = null
   let initBytes = 0
+  let pendingInitBytes = 0
+  let pendingMediaBytes = 0
   let captureBytes = 0
   let captureParts = 0
   let frozen = false
@@ -64,6 +90,7 @@
   const addSourceBuffer = MediaSource.prototype.addSourceBuffer
   const appendBuffer = SourceBuffer.prototype.appendBuffer
   const changeType = SourceBuffer.prototype.changeType
+  const abort = SourceBuffer.prototype.abort
 
   function dataView(data) {
     if (data instanceof ArrayBuffer) return new Uint8Array(data)
@@ -71,54 +98,127 @@
       return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
     return null
   }
-  // Initialization is tracked separately so tentative media can be discarded
-  // without losing the data needed to identify and decode a selected source.
-  function boxes(bytes) {
-    const result = []
-    let offset = 0
-    while (offset + 8 <= bytes.length) {
-      const view = new DataView(
-        bytes.buffer,
-        bytes.byteOffset + offset,
-        bytes.length - offset
-      )
-      let size = view.getUint32(0)
-      let header = 8
-      const type = String.fromCharCode(
-        ...bytes.subarray(offset + 4, offset + 8)
-      )
-      if (size === 1) {
-        if (offset + 16 > bytes.length) return null
-        size = view.getUint32(8) * 0x100000000 + view.getUint32(12)
-        header = 16
-      }
-      if (
-        !size ||
-        !Number.isSafeInteger(size) ||
-        size < header ||
-        offset + size > bytes.length
-      )
-        return null
-      if (result.length >= MAX_PARTS) return null
-      result.push({ type, start: offset, end: offset + size })
-      offset += size
-    }
-    return offset === bytes.length ? result : null
+  function isInit(type) {
+    return type === 'ftyp' || type === 'moov'
   }
-  function storeInit(track, bytes, parsed) {
-    if (!parsed) return
-    for (const box of parsed) {
-      if (!['ftyp', 'moov'].includes(box.type)) continue
-      const size = box.end - box.start
+  function bufferedBytes() {
+    return initBytes + pendingInitBytes + captureBytes + pendingMediaBytes
+  }
+  function freePendingData(box) {
+    if (!box?.data) return
+    if (isInit(box.type)) pendingInitBytes -= box.size
+    else pendingMediaBytes -= box.size
+    box.data = null
+  }
+  function resetAppendParser(track) {
+    freePendingData(track.pendingBox)
+    track.pendingBox = null
+    track.headerLength = 0
+  }
+  function forgetInit(track, type) {
+    const bytes = track.init.get(type)
+    if (bytes) initBytes -= bytes.length
+    track.init.delete(type)
+  }
+  function storeInit(track, type, bytes, ownsBytes) {
+    const previous = track.init.get(type)
+    if (frozen && selected?.source === track.source && type === 'ftyp') return
+    if (previous && type === 'ftyp') return
+    if (previous) {
       if (
-        track.init.has(box.type) ||
-        size > MAX_INIT_BYTES ||
-        initBytes + size > MAX_INIT_TOTAL ||
-        initBytes + captureBytes + size > MAX_CAPTURE_BYTES
+        previous.length === bytes.length &&
+        previous.every((byte, i) => byte === bytes[i])
       )
+        return
+      if (selected?.source === track.source) {
+        track.staleInit = true
+        if (!frozen) track.failure = 'format-change'
+        return
+      }
+      if (provisional?.source === track.source) {
+        const current = provisional
+        clearProvisional()
+        provisional = current
+      }
+      forgetInit(track, type)
+    }
+    if (
+      bytes.length > MAX_INIT_BYTES ||
+      initBytes + pendingInitBytes + bytes.length > MAX_INIT_TOTAL ||
+      bufferedBytes() + bytes.length > MAX_CAPTURE_BYTES
+    )
+      return
+    track.init.set(type, ownsBytes ? bytes : bytes.slice())
+    initBytes += bytes.length
+  }
+  // An appendBuffer call is a byte stream chunk, not an MP4 box boundary.
+  // Inspect complete boxes in order, even if their headers are split or the
+  // native append finishes halfway through the next box.
+  function appendBoxes(track, bytes, keepMedia, visit) {
+    let offset = 0
+    const header = track.header
+    const view = new DataView(header.buffer)
+    let boxes = 0
+    while (offset < bytes.length) {
+      const pending = track.pendingBox
+      if (pending) {
+        if (pending.data && !isInit(pending.type) && !keepMedia())
+          freePendingData(pending)
+        const count = Math.min(
+          pending.size - pending.used,
+          bytes.length - offset
+        )
+        pending.data?.set(bytes.subarray(offset, offset + count), pending.used)
+        offset += count
+        pending.used += count
+        if (pending.used === pending.size) {
+          const data = pending.data
+          freePendingData(pending)
+          track.pendingBox = null
+          if (data) visit(pending.type, data, true)
+        }
         continue
-      track.init.set(box.type, bytes.slice(box.start, box.end))
-      initBytes += size
+      }
+      const start = track.headerLength ? -1 : offset
+      while (offset < bytes.length) {
+        header[track.headerLength++] = bytes[offset++]
+        if (track.headerLength < 8) continue
+        let size = view.getUint32(0)
+        const length = size === 1 ? 16 : 8
+        if (track.headerLength < length) continue
+        if (length === 16) size = Number(view.getBigUint64(8))
+        track.headerLength = 0
+        if (!Number.isSafeInteger(size) || size < length || ++boxes > MAX_PARTS)
+          return
+        const type = String.fromCharCode(...header.subarray(4, 8))
+        const init = isInit(type)
+        const end = offset + size - length
+        if (start >= 0 && end <= bytes.length) {
+          if (init || keepMedia()) visit(type, bytes.subarray(start, end))
+          offset = end
+        } else {
+          let data = null
+          if (
+            bufferedBytes() + size <= MAX_CAPTURE_BYTES &&
+            (init
+              ? size <= MAX_INIT_BYTES &&
+                initBytes + pendingInitBytes + size <= MAX_INIT_TOTAL
+              : keepMedia())
+          ) {
+            data = new Uint8Array(size)
+            data.set(header.subarray(0, length))
+            if (init) pendingInitBytes += size
+            else pendingMediaBytes += size
+          }
+          if (size === length) {
+            if (data) {
+              freePendingData({ type, size, data })
+              visit(type, data, true)
+            }
+          } else track.pendingBox = { type, size, used: length, data }
+        }
+        break
+      }
     }
   }
   function belongsToSelected(track) {
@@ -179,6 +279,7 @@
         track.chunks.length = 0
         track.timing = null
         track.failure = null
+        if (!isInit(track.pendingBox?.type)) freePendingData(track.pendingBox)
       }
     }
     provisional = null
@@ -287,6 +388,9 @@
           buffer: result,
           mime,
           init: new Map(),
+          header: new Uint8Array(16),
+          headerLength: 0,
+          pendingBox: null,
           chunks: [],
           failure: null,
           timing: null,
@@ -308,14 +412,26 @@
     SourceBuffer.prototype.changeType = function () {
       const result = changeType.apply(this, arguments)
       const track = !stopped && buffers.get(this)
-      if (track && belongsToSelected(track)) {
+      if (!track) return result
+      resetAppendParser(track)
+      if (selected?.source === track.source) {
         track.failure = 'format-change'
-      } else if (track && !selected) {
+        track.nextMime = arguments[0]
+        track.staleInit = true
+      } else {
         if (provisional?.source === track.source) clearProvisional()
-        for (const bytes of track.init.values()) initBytes -= bytes.length
-        track.init.clear()
+        forgetInit(track, 'ftyp')
+        forgetInit(track, 'moov')
         track.mime = arguments[0]
       }
+      return result
+    }
+  }
+  if (typeof abort === 'function') {
+    SourceBuffer.prototype.abort = function () {
+      const result = abort.apply(this, arguments)
+      const track = !stopped && buffers.get(this)
+      if (track) resetAppendParser(track)
       return result
     }
   }
@@ -330,60 +446,65 @@
     const result = appendBuffer.apply(this, arguments)
     try {
       const bytes = track && dataView(data)
-      if (!bytes || !bytes.length || frozen) return result
-      const parsed = boxes(bytes)
-      if (!selected || selected.source === track.source)
-        storeInit(track, bytes, parsed)
-      const current = selected ? null : updateProvisional(track.source)
-      if (
-        (selected
-          ? !belongsToSelected(track)
-          : !current || current.source !== track.source) ||
-        failure
-      )
+      if (!bytes?.length || !/^(audio|video)\/mp4(?:\s*;|$)/i.test(track.mime))
         return result
-      // Keep the raw appended data (excluding initialization boxes) only for the
-      // selected source. An unsupported split/format fails later during remux.
-      const mediaBoxes = parsed?.filter(
-        (box) => box.type !== 'ftyp' && box.type !== 'moov'
-      )
-      const size = mediaBoxes
-        ? mediaBoxes.reduce((sum, box) => sum + box.end - box.start, 0)
-        : bytes.byteLength
-      if (
-        initBytes + captureBytes + size > MAX_CAPTURE_BYTES ||
-        captureParts + (mediaBoxes?.length ?? 1) > MAX_PARTS
-      ) {
+      let current = null
+      if (!selected) {
+        try {
+          current = updateProvisional(track.source)
+        } catch {}
+      }
+      const capturing =
+        !frozen &&
+        (selected ? belongsToSelected(track) : current?.source === track.source)
+      function clearCapture() {
         if (selected) {
           failure = '采集片段超过内存上限，请缩短播放时间后重试'
-          return result
+        } else {
+          clearProvisional()
+          provisional = current
         }
-        clearProvisional()
-        provisional = current
-        if (
-          initBytes + size > MAX_CAPTURE_BYTES ||
-          (mediaBoxes?.length ?? 1) > MAX_PARTS
-        )
-          return result
       }
-      if (size) {
+      if (capturing && bytes.length > MAX_CAPTURE_BYTES) {
+        clearCapture()
+        resetAppendParser(track)
+        return result
+      }
+      function keepMedia() {
+        if (!capturing || failure || track.failure) return false
         if (!timing || (track.timing && !sameTiming(track.timing, timing))) {
           if (selected) {
             track.failure = 'timing'
-            return result
+            return false
           }
           clearProvisional()
           provisional = current
-          if (!timing) return result
+          if (!timing) return false
         }
         track.timing = timing
+        return true
       }
-      const chunks = mediaBoxes
-        ? mediaBoxes.map((box) => bytes.slice(box.start, box.end))
-        : [bytes.slice()]
-      track.chunks.push(...chunks)
-      captureBytes += size
-      captureParts += chunks.length
+      appendBoxes(track, bytes, keepMedia, (type, box, ownsBytes) => {
+        if (isInit(type)) {
+          storeInit(track, type, box, ownsBytes)
+          return
+        }
+        if (
+          bufferedBytes() + box.length > MAX_CAPTURE_BYTES ||
+          captureParts >= MAX_PARTS - 4
+        ) {
+          clearCapture()
+          if (
+            selected ||
+            !keepMedia() ||
+            bufferedBytes() + box.length > MAX_CAPTURE_BYTES
+          )
+            return
+        }
+        track.chunks.push(ownsBytes ? box : box.slice())
+        captureBytes += box.length
+        captureParts++
+      })
       return result
     } catch {
       // Collection is best effort and must never disrupt the player.
@@ -418,9 +539,7 @@
     if (!tracks?.length)
       throw new Error('播放器尚未加载媒体轨道，请先播放视频后重试')
     checkTracks(source, tracks)
-    if (
-      tracks.some((track) => !track.init.has('ftyp') || !track.init.has('moov'))
-    )
+    if (tracks.some((track) => !track.init.has('moov') || track.staleInit))
       throw new Error('缺少视频初始化数据，请重新启用采集并刷新页面')
     const candidate = updateProvisional()
     const useProvisional =
@@ -440,14 +559,15 @@
       for (const track of tracks) {
         track.chunks.length = 0
         track.timing = null
+        if (!isInit(track.pendingBox?.type)) freePendingData(track.pendingBox)
       }
     // Discard init data for all unrelated sources as soon as selection is made.
     if (!automatic)
       for (const other of trackedSources) {
         if (other === source) continue
         for (const track of streams.get(other) || []) {
-          for (const bytes of track.init.values()) initBytes -= bytes.length
-          track.init.clear()
+          forgetInit(track, 'ftyp')
+          forgetInit(track, 'moov')
         }
       }
     return { tracks: tracks.length }
@@ -520,30 +640,31 @@
       throw new Error(failure || '视频来源已变化')
     const tracks = streams.get(selected.source) || []
     checkTracks(selected.source, tracks)
-    if (
-      tracks.some((track) => !track.init.has('ftyp') || !track.init.has('moov'))
-    )
+    if (tracks.some((track) => !track.init.has('moov') || track.staleInit))
       throw new Error('缺少视频初始化数据，请重新启用采集并刷新页面')
     if (tracks.some((track) => !hasCompleteFragment(track)))
       throw new Error('尚未获取到足够片段，请继续播放或拖动进度条后重试')
+    const size = tracks.reduce(
+      (sum, track) =>
+        sum +
+        (track.init.get('ftyp') || defaultFileType).length +
+        track.init.get('moov').length,
+      captureBytes
+    )
+    if (size > MAX_CAPTURE_BYTES)
+      throw new Error('采集片段超过内存上限，请缩短播放时间后重试')
     frozen = true
     return {
       tracks: tracks.map((track) => ({
         mime: track.mime,
         ...track.timing,
         parts: [
-          track.init.get('ftyp'),
+          track.init.get('ftyp') || defaultFileType,
           track.init.get('moov'),
           ...track.chunks,
         ].map((part) => part.byteLength),
       })),
-      size:
-        captureBytes +
-        tracks.reduce(
-          (sum, track) =>
-            sum + track.init.get('ftyp').length + track.init.get('moov').length,
-          0
-        ),
+      size,
     }
   }
   function read(trackIndex, partIndex, offset, length) {
@@ -559,7 +680,7 @@
       throw new Error('片段读取参数无效')
     const track = (streams.get(selected.source) || [])[trackIndex]
     const parts = track && [
-      track.init.get('ftyp'),
+      track.init.get('ftyp') || defaultFileType,
       track.init.get('moov'),
       ...track.chunks,
     ]
@@ -575,6 +696,16 @@
         track.chunks.length = 0
         track.timing = null
         track.failure = null
+        if (!isInit(track.pendingBox?.type)) freePendingData(track.pendingBox)
+        if (track.staleInit) {
+          forgetInit(track, 'ftyp')
+          forgetInit(track, 'moov')
+          track.staleInit = false
+        }
+        if (track.nextMime !== undefined) {
+          track.mime = track.nextMime
+          track.nextMime = undefined
+        }
       }
     selected = null
     provisional = null
@@ -590,11 +721,17 @@
       for (const track of streams.get(source) || []) {
         track.chunks.length = 0
         track.init.clear()
+        resetAppendParser(track)
       }
     }
     trackedSources.clear()
     sourceByUrl.clear()
-    initBytes = captureBytes = captureParts = 0
+    initBytes =
+      pendingInitBytes =
+      captureBytes =
+      pendingMediaBytes =
+      captureParts =
+        0
     frozen = false
     failure = ''
     // Preserve wrappers installed by a page after ours.
@@ -608,6 +745,8 @@
       SourceBuffer.prototype.appendBuffer = appendBuffer
     if (SourceBuffer.prototype.changeType === wrappedChange)
       SourceBuffer.prototype.changeType = changeType
+    if (SourceBuffer.prototype.abort === wrappedAbort && abort)
+      SourceBuffer.prototype.abort = abort
     window.removeEventListener('message', handleMessage)
     window.removeEventListener('pagehide', stop)
     delete globalThis.__inkloomMseCapture
@@ -617,6 +756,7 @@
   const wrappedAdd = MediaSource.prototype.addSourceBuffer
   const wrappedAppend = SourceBuffer.prototype.appendBuffer
   const wrappedChange = SourceBuffer.prototype.changeType
+  const wrappedAbort = SourceBuffer.prototype.abort
   function handleMessage(event) {
     if (event.source !== window || event.data?.__inkloomMse !== 'request')
       return

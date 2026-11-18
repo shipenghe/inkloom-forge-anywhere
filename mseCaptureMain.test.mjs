@@ -2,6 +2,17 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
+import {
+  BufferSource,
+  BufferTarget,
+  EncodedPacketSink,
+  EncodedVideoPacketSource,
+  Input,
+  MP4,
+  Mp4OutputFormat,
+  Output,
+} from 'mediabunny'
+import { remuxCapturedVideo } from './mseRemux.mjs'
 
 const script = readFileSync(
   new URL('./mseCaptureMain.js', import.meta.url),
@@ -20,7 +31,7 @@ function setup({
     globalThis.URL = { createObjectURL() { return 'blob:fixture/' + nextUrl++ }, revokeObjectURL() {} }
     globalThis.SourceBuffer = class SourceBuffer {
       constructor() { this.mode='segments'; this.timestampOffset=0; this.appendWindowStart=0; this.appendWindowEnd=Infinity }
-      appendBuffer() { if (this.offsetAfterAppend !== undefined) this.timestampOffset = this.offsetAfterAppend } changeType() {}
+      appendBuffer() { if (this.offsetAfterAppend !== undefined) this.timestampOffset = this.offsetAfterAppend } changeType() {} abort() {}
     }
     globalThis.MediaSource = class MediaSource { addSourceBuffer() { return new SourceBuffer() } }
     globalThis.videos = []
@@ -302,6 +313,123 @@ test('does not mistake partial MP4 boxes or mixed initialization/media as full p
     `globalThis.a = new MediaSource(); globalThis.url = URL.createObjectURL(a); globalThis.track = a.addSourceBuffer('video/mp4'); videos.push({currentSrc:url}); track.appendBuffer(new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]));`
   )
   assert.throws(() => run('__inkloomMseCapture.select(url)'), /初始化/)
+})
+
+test('retains initialization and media boxes across append boundaries', () => {
+  const run = setup()
+  run(`
+    globalThis.source = new MediaSource(); globalThis.url = URL.createObjectURL(source)
+    globalThis.track = source.addSourceBuffer('video/mp4'); videos.push(visible(url))
+    let init = concat(box('ftyp'),box('moov',[11,12]))
+    let media = concat(box('moof',[21]),box('mdat',[22,23]))
+    track.appendBuffer(init.slice(0,5))
+    track.appendBuffer(init.slice(5,-1))
+    track.appendBuffer(concat(init.slice(-1),media.slice(0,12)))
+    __inkloomMseCapture.select(url)
+    track.appendBuffer(media.slice(12))
+  `)
+  const result = run('__inkloomMseCapture.snapshot()')
+  assert.deepEqual(Array.from(result.tracks[0].parts), [9, 10, 9, 10])
+  assert.equal(run('__inkloomMseCapture.read(0, 1, 8, 2).at(-1)'), 12)
+  assert.equal(run('__inkloomMseCapture.read(0, 3, 8, 2).at(-1)'), 23)
+})
+
+test('remuxes real MP4 initialization without an appended ftyp box', async () => {
+  const fixture = readFileSync(
+    new URL('./fixtures/remux-sample.mp4', import.meta.url)
+  )
+  const input = new Input({ source: new BufferSource(fixture), formats: [MP4] })
+  const target = new BufferTarget()
+  const output = new Output({
+    format: new Mp4OutputFormat({ fastStart: 'fragmented' }),
+    target,
+  })
+  const video = await input.getPrimaryVideoTrack()
+  const source = new EncodedVideoPacketSource(video.codec)
+  output.addVideoTrack(source)
+  await output.start()
+  const decoderConfig = await video.getDecoderConfig()
+  for await (const packet of new EncodedPacketSink(video).packets())
+    await source.add(packet, { decoderConfig })
+  source.close()
+  await output.finalize()
+  input.dispose()
+
+  const start = new DataView(target.buffer).getUint32(0)
+  const payload = Array.from(new Uint8Array(target.buffer, start))
+  const run = setup()
+  run(`
+    const input = new MediaSource(); const url = URL.createObjectURL(input)
+    const track = input.addSourceBuffer('video/mp4'); videos.push(visible(url))
+    track.appendBuffer(Uint8Array.from(${JSON.stringify(
+      payload
+    )})); __inkloomMseCapture.select(url)
+  `)
+  const {
+    tracks: [track],
+  } = run('__inkloomMseCapture.snapshot()')
+  const chunks = Array.from(track.parts, (length, index) =>
+    Uint8Array.from(run(`__inkloomMseCapture.read(0, ${index}, 0, ${length})`))
+  )
+  assert.equal(new TextDecoder().decode(chunks[0].subarray(4, 8)), 'ftyp')
+  assert.equal(new TextDecoder().decode(chunks[1].subarray(4, 8)), 'moov')
+  const clip = await remuxCapturedVideo([{ mime: track.mime, chunks }])
+  assert.ok(clip.duration > 14.9 && clip.duration < 15.1)
+})
+
+test('a native abort discards split bytes without borrowing the previous initialization', () => {
+  const run = setup()
+  run(`
+    globalThis.source = new MediaSource(); globalThis.url = URL.createObjectURL(source)
+    globalThis.track = source.addSourceBuffer('video/mp4'); videos.push(visible(url))
+    track.appendBuffer(box('moov',[7,8,9]).slice(0,-2)); track.abort()
+    track.appendBuffer(concat(box('ftyp'),box('moov',[11]),box('moof',[21]),box('mdat',[22])))
+    __inkloomMseCapture.select(url); __inkloomMseCapture.snapshot()
+  `)
+  assert.equal(run('__inkloomMseCapture.read(0, 1, 8, 1)[0]'), 11)
+  assert.equal(run('__inkloomMseCapture.read(0, 3, 8, 1)[0]'), 22)
+})
+
+test('keeps media with its own movie initialization across repeated init and format changes', () => {
+  const run = setup()
+  run(`
+    globalThis.source = new MediaSource(); globalThis.url = URL.createObjectURL(source)
+    globalThis.track = source.addSourceBuffer('video/mp4'); videos.push(visible(url))
+    track.appendBuffer(concat(box('ftyp'),box('moov',[1]),box('moof',[11]),box('mdat',[12])))
+    track.appendBuffer(concat(box('ftyp'),box('moov',[2]),box('moof',[21]),box('mdat',[22])))
+    track.appendBuffer(box('moov',[2])); __inkloomMseCapture.select(url)
+  `)
+  run('__inkloomMseCapture.snapshot()')
+  assert.equal(run('__inkloomMseCapture.read(0, 1, 8, 1)[0]'), 2)
+  assert.equal(run('__inkloomMseCapture.read(0, 3, 8, 1)[0]'), 22)
+  run("track.appendBuffer(box('moov',[3]))")
+  assert.equal(run('__inkloomMseCapture.read(0, 1, 8, 1)[0]'), 2)
+  run('__inkloomMseCapture.release()')
+  assert.throws(() => run('__inkloomMseCapture.select(url)'), /初始化/)
+  run(`
+    track.appendBuffer(concat(box('moov',[3]),box('moof',[31]),box('mdat',[32])))
+    __inkloomMseCapture.select(url); track.appendBuffer(box('moov',[4]))
+  `)
+  assert.throws(() => run('__inkloomMseCapture.snapshot()'), /格式发生切换/)
+  run('__inkloomMseCapture.release()')
+  assert.throws(() => run('__inkloomMseCapture.select(url)'), /初始化/)
+})
+
+test('rejects a playback timing change while a media box is incomplete', () => {
+  const run = setup()
+  run(`
+    globalThis.source = new MediaSource(); globalThis.url = URL.createObjectURL(source)
+    globalThis.track = source.addSourceBuffer('video/mp4'); videos.push(visible(url))
+    track.appendBuffer(concat(box('ftyp'),box('moov'))); __inkloomMseCapture.select(url)
+    const fragment = concat(box('moof'), box('mdat',[21,22]))
+    track.appendBuffer(fragment.slice(0,-1))
+    track.timestampOffset=5
+    track.appendBuffer(fragment.slice(-1))
+  `)
+  assert.throws(
+    () => run('__inkloomMseCapture.snapshot()'),
+    /播放时间配置发生变化/
+  )
 })
 
 test('rejects capture beyond its byte budget without creating a retained copy', () => {

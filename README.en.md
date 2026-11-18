@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.35
+# Forge Anywhere · v1.0.36
 
 Send inspiration to your canvas. Send images, videos and audio from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.35.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.36.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -42,7 +42,7 @@ The rows can overlap existing nodes or extend beyond the visible viewport. Zoom 
 
 **Auto-prepare video** is on by default. Website access is declared at installation; you can turn preparation off in the panel, and that choice is remembered. Refresh video pages that were already open. Then play normally and right-click to send. The extension first tries to obtain a full video file; for supported segmented players it can instead assemble a prepared clip.
 
-**Clip 00:20–00:30** identifies the range on the original video's timeline. **No audio** indicates that the result has no audio track. When audio and video buffer at different rates, Forge assembles a clip from a keyframe within their shared range. If a video is not ready, let it load and try again.
+**Clip 00:20–00:30** identifies the range on the original video's timeline. **No audio** indicates that the result has no audio track. When the buffer has gaps or the audio and video cover different times, Forge assembles a clip from a keyframe within one shared, continuous range. If a video is not ready, let it load and try again.
 
 Video preparation happens locally. Media is uploaded only when you send. Preparation captures supported compressed media segments, rather than recording the screen. Some players, encrypted videos, formats and sources are unsupported. Automatic preparation allows up to four video pages, with a 64 MiB capture budget per page. Closing a page clears its in-memory capture.
 
@@ -79,6 +79,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.35.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.36.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

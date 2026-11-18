@@ -56,12 +56,50 @@ function hasMarker(bytes, box, marker) {
   return false
 }
 
-function validateMp4(bytes) {
+function validateDecodeOrder(bytes, fragments) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const lastTime = new Map()
+  for (const fragment of fragments) {
+    const tracks = boxes(
+      bytes,
+      fragment.offset + fragment.header,
+      fragment.end
+    ).filter((box) => box.type === 'traf')
+    if (!tracks.length) throw new Error('无法确认视频片段顺序')
+    for (const track of tracks) {
+      const children = boxes(bytes, track.offset + track.header, track.end)
+      const headers = children.filter((box) => box.type === 'tfhd')
+      const times = children.filter((box) => box.type === 'tfdt')
+      if (headers.length !== 1 || times.length !== 1)
+        throw new Error('无法确认视频片段顺序')
+      const headerStart = headers[0].offset + headers[0].header
+      const timeStart = times[0].offset + times[0].header
+      const version = bytes[timeStart]
+      if (
+        headers[0].end - headerStart < 8 ||
+        (version !== 0 && version !== 1) ||
+        times[0].end - timeStart < (version === 0 ? 8 : 12)
+      )
+        throw new Error('无法确认视频片段顺序')
+      const id = view.getUint32(headerStart + 4)
+      const time =
+        version === 0
+          ? view.getUint32(timeStart + 4)
+          : Number(view.getBigUint64(timeStart + 4))
+      if (!Number.isSafeInteger(time) || time < (lastTime.get(id) ?? 0))
+        throw new Error('无法确认视频片段顺序')
+      lastTime.set(id, time)
+    }
+  }
+}
+
+function validateMp4(bytes, allowIrregularSequence = false) {
   const top = boxes(bytes)
   let init = false,
     header = false,
     waitingData = false,
-    previousSequence = null
+    previousSequence = null,
+    irregularSequence = false
   let fragments = 0
   for (const box of top) {
     if (box.type === 'ftyp') {
@@ -97,8 +135,11 @@ function validateMp4(bytes) {
         bytes.byteOffset + headers[0].offset + headers[0].header + 4,
         4
       ).getUint32(0)
-      if (previousSequence !== null && sequence !== previousSequence + 1)
-        throw new Error('视频片段不连续，请重新采集')
+      if (previousSequence !== null && sequence !== previousSequence + 1) {
+        if (!allowIrregularSequence)
+          throw new Error('视频片段不连续，请重新采集')
+        irregularSequence = true
+      }
       previousSequence = sequence
       waitingData = true
       fragments++
@@ -116,6 +157,13 @@ function validateMp4(bytes) {
   }
   if (!header || !init || !fragments || waitingData)
     throw new Error('缺少初始化数据或可用的视频片段')
+  // Separate streams can number fragments independently. If numbers skip or
+  // repeat, we need explicit decode times to distinguish that from lost data.
+  if (irregularSequence)
+    validateDecodeOrder(
+      bytes,
+      top.filter((box) => box.type === 'moof')
+    )
 }
 
 export async function matchesFragmentedVideoDuration(blob, expectedDuration) {
@@ -165,7 +213,7 @@ function concatStreams(streams) {
       bytes.set(chunk, offset)
       offset += chunk.byteLength
     }
-    validateMp4(bytes)
+    validateMp4(bytes, true)
     return bytes
   })
 }
@@ -196,7 +244,11 @@ async function readPackets(track, timing) {
   let ended = false
   let firstKeyTimestamp
   let scanned = 0
-  for await (const packet of new EncodedPacketSink(track).packets()) {
+  for await (const packet of new EncodedPacketSink(track).packets(
+    undefined,
+    undefined,
+    { verifyKeyPackets: track.type === 'video' }
+  )) {
     if (++scanned > MAX_PACKETS) throw new Error('视频片段过长')
     if (
       !Number.isFinite(packet.timestamp) ||
@@ -240,20 +292,72 @@ async function readPackets(track, timing) {
         ? '播放窗口内没有可用关键帧，无法组装视频片段'
         : '播放窗口内没有完整音频数据，无法组装视频片段'
     )
-  return { packets, ...packetRange(packets) }
+  return continuousRuns(packets, track.type === 'video')
+}
+
+function presentationOrder(packets) {
+  return packets
+    .map((packet, index) => ({
+      index,
+      start: packet.timestamp,
+      end: packet.timestamp + packet.duration,
+    }))
+    .sort((a, b) => a.start - b.start)
 }
 
 function packetRange(packets) {
-  const timeline = packets
-    .map((p) => ({ start: p.timestamp, end: p.timestamp + p.duration }))
-    .sort((a, b) => a.start - b.start)
+  if (!packets.length) return null
+  const timeline = presentationOrder(packets)
   let end = timeline[0].end
   for (const item of timeline.slice(1)) {
-    if (item.start > end + MAX_GAP_SECONDS)
-      throw new Error('视频片段不连续，请重新采集')
+    if (item.start > end + MAX_GAP_SECONDS) return null
     end = Math.max(end, item.end)
   }
-  return { start: timeline[0].start, end }
+  return { packets, start: timeline[0].start, end }
+}
+
+function continuousRuns(packets, isVideo) {
+  const timeline = presentationOrder(packets)
+  const groups = new Uint32Array(packets.length)
+  let end = timeline[0].end
+  let previous = timeline[0]
+  let group = 0
+  for (const item of timeline.slice(1)) {
+    if (
+      item.start < end - MAX_GAP_SECONDS ||
+      (item.start === previous.start &&
+        item.end > item.start &&
+        previous.end > previous.start)
+    )
+      throw new Error('视频片段不连续，请重新采集')
+    if (item.start > end + MAX_GAP_SECONDS) group++
+    groups[item.index] = group
+    end = Math.max(end, item.end)
+    previous = item
+  }
+  if (!group) return [{ packets, start: timeline[0].start, end }]
+
+  // Split in decode order, where presentation timestamps can move backwards
+  // for B frames. Never pull packets across a missing interval into a clip.
+  const runs = []
+  for (let start = 0; start < packets.length; ) {
+    let stop = start + 1
+    while (stop < packets.length && groups[stop] === groups[start]) stop++
+    const run = packets.slice(start, stop)
+    start = stop
+    const key = isVideo ? run.findIndex((packet) => packet.type === 'key') : 0
+    if (key < 0) continue
+    const leading = isVideo
+      ? run.findIndex(
+          (packet, index) =>
+            index > key && packet.timestamp < run[key].timestamp - 1e-7
+        )
+      : -1
+    const range = packetRange(run.slice(key, leading < 0 ? undefined : leading))
+    if (range && range.end > range.start) runs.push(range)
+  }
+  if (!runs.length) throw new Error('视频片段不连续，请重新采集')
+  return runs.sort((a, b) => a.start - b.start)
 }
 
 function trimVideoToAudio(video, audio) {
@@ -284,8 +388,34 @@ function trimVideoToAudio(video, audio) {
       break
     packets.push(packet)
   }
-  if (!packets.length) throw new Error('音视频片段时间范围不一致，请重新采集')
-  return { packets, ...packetRange(packets) }
+  return packetRange(packets)
+}
+
+function selectClip(videoRuns, audioRuns) {
+  if (!audioRuns)
+    return {
+      videoData: videoRuns[0],
+      alignedAudio: null,
+    }
+
+  for (let v = 0, a = 0; v < videoRuns.length && a < audioRuns.length; ) {
+    const video = videoRuns[v]
+    const audio = audioRuns[a]
+    if (video.start < audio.end && audio.start < video.end) {
+      const videoData = trimVideoToAudio(video, audio)
+      if (videoData) {
+        const packets = audio.packets.filter(
+          (packet) =>
+            packet.timestamp + packet.duration > videoData.start &&
+            packet.timestamp < videoData.end
+        )
+        if (packets.length) return { videoData, alignedAudio: { packets } }
+      }
+    }
+    if (video.end <= audio.end) v++
+    else a++
+  }
+  throw new Error('音视频片段时间范围不一致，请重新采集')
 }
 
 /**
@@ -327,32 +457,15 @@ export async function remuxCapturedVideo(
       audio = audios[0]?.track
     if (!video.codec || (audio && !audio.codec))
       throw new Error('暂不支持此音视频编码')
-    const [capturedVideo, audioData, videoConfig, audioConfig] =
-      await Promise.all([
-        readPackets(video, videos[0].timing),
-        audio ? readPackets(audio, audios[0].timing) : null,
-        video.getDecoderConfig(),
-        audio ? audio.getDecoderConfig() : null,
-      ])
-    if (
-      !videoConfig ||
-      (audio && !audioConfig) ||
-      capturedVideo.packets[0].type !== 'key'
-    )
+    const [videoRuns, audioRuns, videoConfig, audioConfig] = await Promise.all([
+      readPackets(video, videos[0].timing),
+      audio ? readPackets(audio, audios[0].timing) : null,
+      video.getDecoderConfig(),
+      audio ? audio.getDecoderConfig() : null,
+    ])
+    if (!videoConfig || (audio && !audioConfig))
       throw new Error('缺少初始化数据或关键帧，无法组装视频片段')
-    const videoData = trimVideoToAudio(capturedVideo, audioData)
-    // Retain only audio packets that overlap the video interval; otherwise an
-    // earlier audio buffer can add a long lead-in before the first video frame.
-    const alignedAudio = audioData && {
-      ...audioData,
-      packets: audioData.packets.filter(
-        (packet) =>
-          packet.timestamp + packet.duration > videoData.start &&
-          packet.timestamp < videoData.end
-      ),
-    }
-    if (alignedAudio && !alignedAudio.packets.length)
-      throw new Error('音视频片段时间范围不一致，请重新采集')
+    const { videoData, alignedAudio } = selectClip(videoRuns, audioRuns)
     const start = alignedAudio
       ? alignedAudio.packets.reduce(
           (time, packet) => Math.min(time, packet.timestamp),
