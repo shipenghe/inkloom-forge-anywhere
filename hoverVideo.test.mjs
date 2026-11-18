@@ -10,7 +10,7 @@ const fallback = readFileSync(
 const code = readFileSync(new URL('./hoverVideo.js', import.meta.url), 'utf8')
 
 async function fixture({ enabled = true, hasTarget = true } = {}) {
-  const ctx = vm.createContext({ setTimeout, clearTimeout })
+  const ctx = vm.createContext({ setTimeout, clearTimeout, URL })
   vm.runInContext(
     `
     class Element {
@@ -84,6 +84,42 @@ test('anchors audio to the QQ Music bar and refuses a changed track', async () =
     false
   )
   f.ctx.__forgeHoverVideoCleanup()
+})
+
+test('anchors the right-click button to the sibling painting a loaded image and refuses changed paint', async () => {
+  const f = await fixture()
+  f.run(`
+    const frame = new Element('div');
+    globalThis.image = Object.assign(new HTMLImageElement('https://img.example/photo.png'), {complete: true, naturalWidth: 400, naturalHeight: 250});
+    image.style.opacity = '0';
+    globalThis.paint = new Element('div');
+    paint.style.backgroundImage = 'url("' + image.currentSrc + '")';
+    frame.append(paint, image); document.body.append(frame);
+    document.elementsFromPoint = () => [image, paint, frame, document.body];
+  `)
+  try {
+    await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.image))
+    assert.equal(f.ctx.created[0].style.display, 'block')
+    assert.equal(f.ctx.created[2].attrs['aria-label'], '发送图片到画布')
+    f.ctx.paint.style.backgroundImage = 'none'
+    await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+    assert.equal(
+      f.ctx.sent.some((m) => m.kind === 'HOVER_MEDIA_SEND'),
+      false
+    )
+    assert.equal(f.ctx.created[4].textContent, '素材已变化，请重新右键')
+
+    f.ctx.paint.style.backgroundImage = `url("${f.ctx.image.currentSrc}")`
+    await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.image))
+    f.run(`document.elementsFromPoint = () => [created[0], image, paint, image.parentElement, document.body]`)
+    await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+    const [send] = f.ctx.sent.filter((m) => m.kind === 'HOVER_MEDIA_SEND')
+    assert.equal(send?.url, f.ctx.image.currentSrc)
+    assert.equal(send?.mediaKind, 'image')
+    assert.equal(f.ctx.__inkloomSelectedImage, f.ctx.image)
+  } finally {
+    f.ctx.__forgeHoverVideoCleanup()
+  }
 })
 
 test('button capture receives the first click before document menus and sends once', async () => {

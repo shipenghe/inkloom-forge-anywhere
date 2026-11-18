@@ -1,10 +1,10 @@
-# Forge Anywhere · v1.0.36
+# Forge Anywhere · v1.0.37
 
 Send inspiration to your canvas. Send images, videos and audio from webpages to an open Forge or Tusi canvas.
 
 ## Install
 
-1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.36.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
+1. Open the [latest GitHub release](https://github.com/shipenghe/inkloom-forge-anywhere/releases/latest). Download `Forge-Anywhere-v1.0.37.zip` from Assets, then extract it and keep the `Forge-Anywhere` folder on your computer.
 2. Open `chrome://extensions` in Chrome, or `edge://extensions` in Edge. Turn on **Developer mode**.
 3. Choose **Load unpacked** and select the extracted `Forge-Anywhere` folder. Pin the extension to your toolbar for easy access.
 
@@ -61,7 +61,8 @@ By default, Chinese browser languages—including Traditional Chinese—use Simp
 - Readable images are exported as PNG. If browser security rules prevent this, the extension may request source access and fetch the original file. Supported original image formats are static JPEG, PNG and WebP.
 - Media filenames are `FA Image <timestamp>`, `FA Video <timestamp>` or `FA Audio <timestamp>`, with no extension.
 - The destination must stay open. After refreshing it, navigating away, or reloading the extension, check and set the destination again as needed.
-- Selection covers supported image, video and audio elements. CSS backgrounds, canvas-rendered content and cross-origin embedded players are outside the current selection scope.
+- Selection covers image, video and audio elements, including a transparent image backed by an adjacent layer painting the same URL. Standalone CSS backgrounds, canvas-rendered content and cross-origin embedded players are outside the selection scope.
+- When Forge needs to fetch a static AVIF, it converts it to PNG at its original dimensions. Conversion is limited to 16 MiB, 16,777,216 pixels and 8192 pixels per side.
 - Website access is declared at installation. Turning off auto-prepare stops preparation but does not revoke website permissions. You can revoke those in browser extension settings.
 - The canvas's existing format, size, account and upload restrictions still apply. Check the canvas before manually retrying an uncertain delivery to avoid duplicates.
 
@@ -79,6 +80,6 @@ npm run build
 npm run package
 ```
 
-The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.36.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
+The package command builds the local catalogs and remux bundle, then writes `dist/Forge-Anywhere-v1.0.37.zip` with one `Forge-Anywhere/` folder. Tests, fixtures, development dependencies, and Git history are excluded. The npm `private` flag prevents accidental npm publishing; it does not control GitHub repository visibility.
 
 The generated video fixture is committed, so tests do not require FFmpeg or Inkloom assets. See [fixtures/README.md](fixtures/README.md) for optional regeneration instructions. Keep the bundled third-party license and notice when distributing the extension. Loading from a different directory may assign a new extension ID and require setting preferences, permissions, and the destination again.

@@ -7,6 +7,7 @@
   globalThis.__forgeHoverVideoCleanup?.()
   let media = null
   let mediaControl = null
+  let paintedImageAnchor = null
   let selectedUrl = null
   let lastPointer = null
   let stopped = false
@@ -166,6 +167,8 @@
       visibleAt
     )
     if (covered) return covered
+    const painted = fallback?.paintedImage?.(origin, x, y, visibleAt)
+    if (painted) return painted
     const dialog = origin.closest(
       'dialog, [role="dialog"], [aria-modal="true"]'
     )
@@ -218,6 +221,7 @@
     serial++
     media = null
     mediaControl = null
+    paintedImageAnchor = null
     selectedUrl = null
     host.style.display = 'none'
     notice.hidden = true
@@ -303,6 +307,7 @@
     if (!allowed) return hide()
     media = candidate
     mediaControl = control
+    paintedImageAnchor = candidate.tagName === 'IMG' ? hit.anchor ?? null : null
     selectedUrl = candidateUrl
     const anchor = selectionAnchor()
     const audio = candidate.tagName === 'AUDIO'
@@ -318,6 +323,11 @@
   function selectionAnchor() {
     if (!media?.isConnected || (media.currentSrc || media.src) !== selectedUrl)
       return null
+    if (paintedImageAnchor) {
+      const { x, y } = lastPointer
+      const painted = fallback.paintedImage(media, x, y, visibleAt, host)
+      return painted?.anchor === paintedImageAnchor ? paintedImageAnchor : null
+    }
     if (!mediaControl) return media
     const player = globalThis.__inkloomMediaFallback.audioPlayer(mediaControl)
     return player?.element === media ? player.anchor : null
@@ -376,6 +386,7 @@
   function changedSelection() {
     media = null
     mediaControl = null
+    paintedImageAnchor = null
     selectedUrl = null
     clearTimeout(selectionTimer)
     clearTimeout(idleTimer)

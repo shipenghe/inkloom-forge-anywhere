@@ -189,13 +189,13 @@
 
   function audioPlayer(origin) {
     // Custom controls may share their compact container with a hidden native
-    // player. Only use a direct child audio element in that container.
+    // player. Controls can sit several wrappers below the direct audio sibling.
     for (
       let anchor = origin, depth = 0;
       anchor &&
       anchor !== document.body &&
       anchor !== document.documentElement &&
-      depth < 8;
+      depth < 12;
       anchor = anchor.parentElement, depth++
     ) {
       const tracks = [...anchor.children].filter(
@@ -220,10 +220,50 @@
     return qqMusicAudio(origin)
   }
 
-  function sameBounds(first, second) {
+  function sameBounds(first, second, tolerance = 1) {
     return ['left', 'top', 'right', 'bottom'].every(
-      (edge) => Math.abs(first[edge] - second[edge]) <= 1
+      (edge) => Math.abs(first[edge] - second[edge]) <= tolerance
     )
+  }
+
+  function paintedImage(image, x, y, visibleAt, ownEntry) {
+    // Some galleries use a transparent, decoded img for interaction and a
+    // separate layer to paint it. Only pair the two actual hit layers.
+    if (
+      image?.tagName !== 'IMG' ||
+      !image.isConnected ||
+      !image.complete ||
+      !image.naturalWidth ||
+      !image.naturalHeight ||
+      Number(getComputedStyle(image).opacity) !== 0
+    )
+      return null
+    const parent = image.parentElement
+    if (
+      !parent ||
+      parent === document.body ||
+      parent === document.documentElement
+    )
+      return null
+    const root = image.getRootNode?.() || document
+    const [first, anchor] = (root.elementsFromPoint?.(x, y) || []).filter(
+      (layer) => layer !== ownEntry
+    )
+    if (
+      first !== image ||
+      anchor?.parentElement !== parent ||
+      anchor.matches('img, video, audio, canvas, iframe') ||
+      !visibleAt(anchor, x, y)
+    )
+      return null
+    const url = safeUrl(image.currentSrc, image.ownerDocument?.baseURI)
+    if (!url || getComputedStyle(anchor).backgroundImage !== `url("${url}")`)
+      return null
+    const bounds = image.getBoundingClientRect()
+    return sameBounds(bounds, anchor.getBoundingClientRect()) &&
+      sameBounds(bounds, parent.getBoundingClientRect())
+      ? { element: image, anchor }
+      : null
   }
 
   function opaqueBackdrop(style) {
@@ -306,6 +346,71 @@
     return null
   }
 
+  function transparentVideoLayers(path, x, y, visibleAt) {
+    const [origin] = path
+    if (origin?.tagName !== 'DIV' || !visibleAt(origin, x, y)) return null
+    const stack = document.elementsFromPoint?.(x, y) || []
+    if (stack[0] !== origin) return null
+    const bounds = origin.getBoundingClientRect()
+    const modal = '[role="dialog"], [aria-modal="true"]'
+    function clearLayer(layer) {
+      if (
+        layer.tagName !== 'DIV' ||
+        layer.matches?.(modal) ||
+        !sameBounds(layer.getBoundingClientRect(), bounds, 2) ||
+        !visibleAt(layer, x, y)
+      )
+        return false
+      const style = getComputedStyle(layer)
+      const color = style.backgroundColor
+      return (
+        (!color ||
+          color === 'transparent' ||
+          /^rgba\([^,]+,[^,]+,[^,]+,\s*0(?:\.0+)?\s*\)$/.test(color)) &&
+        [
+          'backgroundImage',
+          'backdropFilter',
+          'filter',
+          'boxShadow',
+          'maskImage',
+        ].every((name) => !style[name] || style[name] === 'none')
+      )
+    }
+    // Unlabelled overlays need stronger evidence than ordinary player buttons:
+    // all hit layers must be transparent, player-sized, and in the same frame.
+    if (!clearLayer(origin)) return null
+    for (const frame of path.slice(1, 4)) {
+      if (
+        frame.tagName !== 'DIV' ||
+        frame.matches?.(modal) ||
+        !sameBounds(frame.getBoundingClientRect(), bounds, 2)
+      )
+        continue
+      const end = stack.indexOf(frame)
+      if (end < 2 || end > 12) continue
+      const videos = stack.filter(
+        (element) =>
+          readyVideo(element) &&
+          frame.contains(element) &&
+          sameBounds(element.getBoundingClientRect(), bounds, 2) &&
+          visibleAt(element, x, y)
+      )
+      if (videos.length > 1) return { element: null, ambiguous: true }
+      const [element] = videos
+      if (!element) continue
+      const index = stack.indexOf(element)
+      if (index >= end) return null
+      if (
+        !stack
+          .slice(0, index)
+          .every((layer) => frame.contains(layer) && clearLayer(layer))
+      )
+        return { element: null }
+      return { element }
+    }
+    return null
+  }
+
   function coveredVideo(path, x, y, visibleAt) {
     const shadow = shadowVideo(path, x, y, visibleAt)
     if (shadow) return shadow
@@ -315,7 +420,8 @@
     const control = path.find((node) =>
       node.matches?.('button, [role="button"]')
     )
-    if (!control || !visibleAt(control, x, y)) return null
+    if (!control) return transparentVideoLayers(path, x, y, visibleAt)
+    if (!visibleAt(control, x, y)) return null
     const bounds = control.getBoundingClientRect()
     const stack = document.elementsFromPoint?.(x, y) || []
     const videos = stack.filter(
@@ -426,6 +532,7 @@
     audioPlayer,
     coveredImage,
     coveredVideo,
+    paintedImage,
     opaqueBackdrop,
   }
 })()

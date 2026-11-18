@@ -12,7 +12,7 @@ const imagePreflight = await readFile(
   new URL('./imagePreflight.js', import.meta.url),
   'utf8'
 )
-function fixture(mime = 'image/png', controller, playback) {
+function fixture(mime = 'image/png', controller, playback, imageApis = {}) {
   let listener
   let installedListener
   let startupListener
@@ -359,6 +359,7 @@ function fixture(mime = 'image/png', controller, playback) {
     Blob,
     Response,
     Uint8Array,
+    ...imageApis,
     checkForgeRelease: async (recheck) => ({
       version: '1.0.15',
       available: true,
@@ -1158,7 +1159,7 @@ test('an AVIF image is rejected before any data reaches the canvas', async () =>
   assert.equal(f.uploadBytes().length, 0)
 })
 
-test('an AVIF response is stopped as soon as its bytes identify the format', async () => {
+test('an AVIF response is stopped at the header when decoding is unavailable', async () => {
   const f = fixture('image/avif')
   f.grantExisting()
   let canceled = false
@@ -1185,6 +1186,125 @@ test('an AVIF response is stopped as soon as its bytes identify the format', asy
   })
   await waitFor(() => /不支持.*AVIF/i.test(f.storage.lastStatus || ''))
   assert.equal(canceled, true)
+  assert.equal(
+    f.calls.some((call) => call.type === 'BEGIN'),
+    false
+  )
+})
+
+test('a fetched static AVIF is decoded from its bytes and delivered as PNG', async () => {
+  function box(type, data) {
+    const header = Buffer.alloc(8)
+    header.writeUInt32BE(8 + data.length)
+    header.write(type, 4)
+    return Buffer.concat([header, data])
+  }
+  const extent = Buffer.alloc(12)
+  extent.writeUInt32BE(824, 4)
+  extent.writeUInt32BE(464, 8)
+  const avif = Buffer.concat([
+    box('ftyp', Buffer.from('avif\0\0\0\0avifmif1')),
+    box(
+      'meta',
+      Buffer.concat([
+        Buffer.alloc(4),
+        box('iprp', box('ipco', box('ispe', extent))),
+      ])
+    ),
+    box('mdat', Buffer.alloc(32)),
+  ])
+  const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+  let drew = false
+  let closed = false
+  const bitmap = {
+    width: 824,
+    height: 464,
+    close() {
+      closed = true
+    },
+  }
+  const f = fixture('image/png', undefined, undefined, {
+    async createImageBitmap(blob) {
+      assert.equal(blob.type, 'image/avif')
+      assert.deepEqual(Buffer.from(await blob.arrayBuffer()), avif)
+      return bitmap
+    },
+    OffscreenCanvas: class {
+      constructor(width, height) {
+        assert.deepEqual([width, height], [824, 464])
+      }
+      getContext(type) {
+        assert.equal(type, '2d')
+        return {
+          drawImage(source) {
+            assert.equal(source, bitmap)
+            drew = true
+          },
+        }
+      }
+      async convertToBlob({ type }) {
+        assert.equal(type, 'image/png')
+        assert.equal(drew, true)
+        return new Blob([png], { type })
+      }
+    },
+  })
+  f.grantExisting()
+  f.setResponse(
+    () =>
+      new Response(avif, {
+        headers: { 'content-type': 'application/octet-stream' },
+      })
+  )
+  f.install()
+  await f.send({ kind: 'SET_TARGET', tabId: 1 })
+  f.context({
+    menuItemId: 'send-media-to-canvas',
+    mediaType: 'image',
+    srcUrl: 'https://cdn.example.com/cover',
+  })
+  await waitFor(() => f.storage.lastStatus === '图片已交给画布')
+  assert.equal(closed, true)
+  assert.deepEqual(f.uploadBytes(), png)
+  const begin = f.calls.find((call) => call.type === 'BEGIN')
+  assert.equal(begin.mime, 'image/png')
+  assert.equal(begin.size, png.length)
+})
+
+test('an oversized fetched AVIF stops before decoding or uploading', async () => {
+  let canceled = false
+  let decoded = false
+  const f = fixture('image/avif', undefined, undefined, {
+    async createImageBitmap() {
+      decoded = true
+    },
+    OffscreenCanvas: class {},
+  })
+  f.grantExisting()
+  f.setResponse(
+    () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(f.bytes.subarray(0, 64))
+          },
+          cancel() {
+            canceled = true
+          },
+        }),
+        { headers: { 'content-length': String(16 * 1024 * 1024 + 1) } }
+      )
+  )
+  f.install()
+  await f.send({ kind: 'SET_TARGET', tabId: 1 })
+  f.context({
+    menuItemId: 'send-media-to-canvas',
+    mediaType: 'image',
+    srcUrl: 'https://cdn.example.com/cover.avif',
+  })
+  await waitFor(() => /过大/.test(f.storage.lastStatus || ''))
+  assert.equal(canceled, true)
+  assert.equal(decoded, false)
   assert.equal(
     f.calls.some((call) => call.type === 'BEGIN'),
     false

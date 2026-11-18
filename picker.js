@@ -88,6 +88,13 @@
       visibleAt
     )
     if (covered) return covered
+    const painted = globalThis.__inkloomMediaFallback?.paintedImage?.(
+      origin,
+      x,
+      y,
+      visibleAt
+    )
+    if (painted) return painted
     // A full-card link or overlay can sit above a pointer-events:none image.
     // Inspect hit elements and their descendants, but never scan the document
     // root, and refuse overlapping candidates instead of choosing arbitrarily.

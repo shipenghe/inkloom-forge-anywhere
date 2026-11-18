@@ -651,3 +651,34 @@ test('does not freeze until a full moof/mdat pair is available', () => {
   run("track.appendBuffer(box('mdat'))")
   assert.equal(run('__inkloomMseCapture.snapshot().tracks.length'), 1)
 })
+
+test('freezes only complete fragment pairs when capture starts or ends between boxes', () => {
+  const run = setup()
+  run(`
+    globalThis.a = new MediaSource(); globalThis.url = URL.createObjectURL(a);
+    globalThis.track = a.addSourceBuffer('video/mp4');
+    track.appendBuffer(concat(box('ftyp'), box('moov')));
+    videos.push({currentSrc:url}); __inkloomMseCapture.select(url);
+    globalThis.remainder = box('mdat',[26,27]);
+    track.appendBuffer(concat(box('mdat',[20]), box('moof',[21]), box('mdat',[22]), box('moof',[23]), box('mdat',[24]), box('moof',[25]), remainder.slice(0,-1)));
+  `)
+  const snapshot = run('__inkloomMseCapture.snapshot()')
+  assert.deepEqual(Array.from(snapshot.tracks[0].parts), Array(6).fill(9))
+  assert.equal(snapshot.size, 54)
+  assert.equal(run('__inkloomMseCapture.read(0, 2, 0, 9).at(-1)'), 21)
+  assert.equal(run('__inkloomMseCapture.read(0, 5, 0, 9).at(-1)'), 24)
+  run('track.appendBuffer(remainder.slice(-1))')
+  assert.throws(() => run('__inkloomMseCapture.read(0, 6, 0, 9)'), /位置无效/)
+})
+
+test('does not join captured media across an unpaired internal fragment header', () => {
+  const run = setup()
+  run(`
+    globalThis.a = new MediaSource(); globalThis.url = URL.createObjectURL(a);
+    globalThis.track = a.addSourceBuffer('video/mp4');
+    track.appendBuffer(concat(box('ftyp'), box('moov')));
+    videos.push({currentSrc:url}); __inkloomMseCapture.select(url);
+    track.appendBuffer(concat(box('moof'), box('mdat'), box('moof'), box('moof'), box('mdat')));
+  `)
+  assert.throws(() => run('__inkloomMseCapture.snapshot()'), /尚未获取/)
+})

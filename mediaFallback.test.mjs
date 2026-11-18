@@ -99,6 +99,11 @@ test('custom controls select a single hidden native audio inside a compact conta
   const find = context.__inkloomMediaFallback.audioPlayer
   assert.equal(find(control).element, audio)
   assert.equal(find(control).anchor, anchor)
+  // Kuwo's elapsed-time label is eight levels below the playback bar.
+  let nestedControl = control
+  for (let depth = 1; depth < 8; depth++)
+    nestedControl = { children: [], parentElement: nestedControl }
+  assert.equal(find(nestedControl)?.element, audio)
   audio.mediaKeys = {}
   assert.equal(find(control), null)
   delete audio.mediaKeys
@@ -224,6 +229,80 @@ test('a transparent full-slide control targets the fitted photo above its backdr
   videos.pop()
   style.backgroundColor = 'rgb(255, 255, 255)'
   assert.equal(find(), null)
+})
+
+test('a plain full-size overlay can identify the decoded video beneath its aligned hit layers', () => {
+  const rect = (left, top, width, height) => ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+  })
+  const aligned = rect(20.5, 51, 285, 506)
+  const player = rect(20, 50, 286, 508)
+  const node = (tagName, parentElement, bounds = aligned) => ({
+    tagName,
+    parentElement,
+    style: { backgroundColor: 'rgba(0, 0, 0, 0)', backgroundImage: 'none' },
+    getBoundingClientRect: () => bounds,
+    matches: () => false,
+    contains(other) {
+      for (let current = other; current; current = current.parentElement)
+        if (current === this) return true
+      return false
+    },
+  })
+  const body = node('BODY')
+  const frame = node('DIV', body, player)
+  const overlay = node('DIV', frame)
+  const origin = node('DIV', overlay)
+  const scrim = node('DIV', frame)
+  const video = Object.assign(node('VIDEO', frame, player), {
+    readyState: 4,
+    videoWidth: 540,
+    videoHeight: 960,
+    currentSrc: 'blob:https://example.test/clip',
+  })
+  let stack = [origin, scrim, overlay, video, frame, body]
+  const context = vm.createContext({
+    document: { body, elementsFromPoint: () => stack },
+    getComputedStyle: (layer) => layer.style,
+  })
+  vm.runInContext(sourceCode, context)
+  const find = () =>
+    context.__inkloomMediaFallback.coveredVideo(
+      [origin, overlay, frame, body],
+      100,
+      100,
+      () => true
+    )
+  assert.equal(find()?.element, video)
+
+  scrim.style.backgroundImage = 'url("https://example.test/poster.jpg")'
+  assert.equal(find()?.element, null)
+  scrim.style.backgroundImage = 'none'
+
+  const foreign = node('DIV', body)
+  stack = [origin, foreign, overlay, video, frame, body]
+  assert.equal(find()?.element, null)
+
+  const control = node('DIV', frame, rect(20, 50, 60, 60))
+  stack = [origin, control, overlay, video, frame, body]
+  assert.equal(find()?.element, null)
+
+  const surface = node('CANVAS', frame)
+  stack = [origin, surface, overlay, video, frame, body]
+  assert.equal(find()?.element, null)
+
+  stack = [origin, scrim, overlay, frame, body]
+  assert.equal(find(), null)
+
+  const second = { ...video }
+  stack = [origin, scrim, overlay, video, second, frame, body]
+  assert.equal(find()?.ambiguous, true)
+  assert.equal(find().element, null)
 })
 
 test('chooses the same Bilibili picture WebP source when AVIF was selected', () => {

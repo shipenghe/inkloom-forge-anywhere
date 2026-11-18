@@ -81,7 +81,7 @@
   let pendingMediaBytes = 0
   let captureBytes = 0
   let captureParts = 0
-  let frozen = false
+  let frozenParts = null
   let failure = ''
   let stopped = false
   let hasMedia = false
@@ -122,7 +122,8 @@
   }
   function storeInit(track, type, bytes, ownsBytes) {
     const previous = track.init.get(type)
-    if (frozen && selected?.source === track.source && type === 'ftyp') return
+    if (frozenParts && selected?.source === track.source && type === 'ftyp')
+      return
     if (previous && type === 'ftyp') return
     if (previous) {
       if (
@@ -132,7 +133,7 @@
         return
       if (selected?.source === track.source) {
         track.staleInit = true
-        if (!frozen) track.failure = 'format-change'
+        if (!frozenParts) track.failure = 'format-change'
         return
       }
       if (provisional?.source === track.source) {
@@ -455,7 +456,7 @@
         } catch {}
       }
       const capturing =
-        !frozen &&
+        !frozenParts &&
         (selected ? belongsToSelected(track) : current?.source === track.source)
       function clearCapture() {
         if (selected) {
@@ -520,7 +521,7 @@
     if (videos.length !== 1) throw new Error('无法唯一确定视频，请重新选择')
     if (selected) {
       if (
-        !frozen &&
+        !frozenParts &&
         !failure &&
         selected.url === url &&
         selected.video === videos[0] &&
@@ -554,7 +555,7 @@
       captureBytes = 0
       captureParts = 0
     }
-    frozen = false
+    frozenParts = null
     if (!useProvisional)
       for (const track of tracks) {
         track.chunks.length = 0
@@ -572,67 +573,32 @@
       }
     return { tracks: tracks.length }
   }
-  // Do not freeze on a lone box or a truncated append. Players may split a box
-  // across several appendBuffer calls; read headers without concatenating 64 MiB.
-  function hasCompleteFragment(track) {
-    const chunks = track.chunks
-    const ends = []
-    let total = 0
-    for (const chunk of chunks) {
-      total += chunk.length
-      ends.push(total)
-    }
-    function byteAt(position) {
-      let low = 0
-      let high = ends.length
-      while (low < high) {
-        const middle = (low + high) >>> 1
-        if (ends[middle] <= position) low = middle + 1
-        else high = middle
-      }
-      if (low >= chunks.length) return 0
-      return chunks[low][position - (low ? ends[low - 1] : 0)]
-    }
-    function uint32(position) {
-      return (
-        byteAt(position) * 0x1000000 +
-        byteAt(position + 1) * 0x10000 +
-        byteAt(position + 2) * 0x100 +
-        byteAt(position + 3)
-      )
-    }
-    let offset = 0
-    let pending = false
+  function wholeFragments(chunks) {
+    // appendBoxes already emits complete boxes. A capture can begin with
+    // data from an earlier fragment or stop before the next data box arrives.
+    const type = (bytes) => String.fromCharCode(...bytes.subarray(4, 8))
+    let start = 0
+    while (start < chunks.length && type(chunks[start]) === 'mdat') start++
+    let pending = -1
     let complete = false
-    let boxCount = 0
-    while (offset < total) {
-      if (total - offset < 8 || ++boxCount > MAX_PARTS) return false
-      let size = uint32(offset)
-      const type = String.fromCharCode(
-        byteAt(offset + 4),
-        byteAt(offset + 5),
-        byteAt(offset + 6),
-        byteAt(offset + 7)
-      )
-      let header = 8
-      if (size === 1) {
-        if (total - offset < 16) return false
-        size = uint32(offset + 8) * 0x100000000 + uint32(offset + 12)
-        header = 16
-      }
-      if (!Number.isSafeInteger(size) || size < header || offset + size > total)
-        return false
-      if (type === 'moof') {
-        if (pending) return false
-        pending = true
-      } else if (type === 'mdat' && pending) {
-        if (size === header) return false
-        pending = false
+    for (let index = start; index < chunks.length; index++) {
+      const box = chunks[index]
+      const kind = type(box)
+      if (kind === 'moof') {
+        if (pending >= 0) return null
+        pending = index
+      } else if (kind === 'mdat') {
+        if (pending < 0) return null
+        const header =
+          new DataView(box.buffer, box.byteOffset).getUint32(0) === 1 ? 16 : 8
+        if (box.length <= header) return null
+        pending = -1
         complete = true
       }
-      offset += size
     }
-    return complete && !pending
+    return complete
+      ? chunks.slice(start, pending < 0 ? undefined : pending)
+      : null
   }
   function snapshot() {
     if (!selected) throw new Error('请先选择要采集的视频')
@@ -642,33 +608,34 @@
     checkTracks(selected.source, tracks)
     if (tracks.some((track) => !track.init.has('moov') || track.staleInit))
       throw new Error('缺少视频初始化数据，请重新启用采集并刷新页面')
-    if (tracks.some((track) => !hasCompleteFragment(track)))
+    const media = tracks.map((track) => wholeFragments(track.chunks))
+    if (media.some((chunks) => !chunks))
       throw new Error('尚未获取到足够片段，请继续播放或拖动进度条后重试')
-    const size = tracks.reduce(
-      (sum, track) =>
-        sum +
-        (track.init.get('ftyp') || defaultFileType).length +
-        track.init.get('moov').length,
-      captureBytes
+    const parts = tracks.map((track, index) => [
+      track.init.get('ftyp') || defaultFileType,
+      track.init.get('moov'),
+      ...media[index],
+    ])
+    const sizes = parts.map((chunks) => chunks.map((part) => part.byteLength))
+    const size = sizes.reduce(
+      (sum, lengths) =>
+        sum + lengths.reduce((trackSize, length) => trackSize + length, 0),
+      0
     )
     if (size > MAX_CAPTURE_BYTES)
       throw new Error('采集片段超过内存上限，请缩短播放时间后重试')
-    frozen = true
+    frozenParts = parts
     return {
-      tracks: tracks.map((track) => ({
+      tracks: tracks.map((track, index) => ({
         mime: track.mime,
         ...track.timing,
-        parts: [
-          track.init.get('ftyp') || defaultFileType,
-          track.init.get('moov'),
-          ...track.chunks,
-        ].map((part) => part.byteLength),
+        parts: sizes[index],
       })),
       size,
     }
   }
   function read(trackIndex, partIndex, offset, length) {
-    if (!frozen || !selected) throw new Error('请先准备采集片段')
+    if (!frozenParts || !selected) throw new Error('请先准备采集片段')
     if (
       ![trackIndex, partIndex, offset, length].every(Number.isSafeInteger) ||
       trackIndex < 0 ||
@@ -678,13 +645,7 @@
       length > MAX_READ_BYTES
     )
       throw new Error('片段读取参数无效')
-    const track = (streams.get(selected.source) || [])[trackIndex]
-    const parts = track && [
-      track.init.get('ftyp') || defaultFileType,
-      track.init.get('moov'),
-      ...track.chunks,
-    ]
-    const part = parts?.[partIndex]
+    const part = frozenParts[trackIndex]?.[partIndex]
     if (!part || offset >= part.byteLength) throw new Error('片段读取位置无效')
     return part.slice(offset, Math.min(offset + length, part.byteLength))
   }
@@ -711,7 +672,7 @@
     provisional = null
     captureBytes = captureParts = 0
     failure = ''
-    frozen = false
+    frozenParts = null
   }
   function stop() {
     stopped = true
@@ -732,7 +693,7 @@
       pendingMediaBytes =
       captureParts =
         0
-    frozen = false
+    frozenParts = null
     failure = ''
     // Preserve wrappers installed by a page after ours.
     if (URL.createObjectURL === wrappedCreate)

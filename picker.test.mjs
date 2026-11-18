@@ -10,7 +10,7 @@ const fallback = readFileSync(
 const code = readFileSync(new URL('./picker.js', import.meta.url), 'utf8')
 
 function fixture() {
-  const ctx = vm.createContext({})
+  const ctx = vm.createContext({ URL })
   vm.runInContext(
     `
     class Element {
@@ -151,6 +151,37 @@ test('ignores hidden descendants and does not mistake an unrelated modal for a m
   `)
   await h.click(h.ctx.overlay)
   assert.equal(h.ctx.sent.length, 0)
+})
+
+test('selects a transparent loaded image only when its hit sibling paints that exact image', async () => {
+  const f = fixture()
+  f.run(`
+    globalThis.dialog = new Element('dialog'); globalThis.frame = new Element('div');
+    globalThis.image = Object.assign(new Element('img'), {complete: true, naturalWidth: 300, naturalHeight: 200, currentSrc: 'https://img.example/photo?width=300'});
+    image.url = image.currentSrc; image.style.opacity = '0';
+    globalThis.paint = new Element('div'); globalThis.overlay = new Element('div');
+    frame.append(paint, image); dialog.append(frame, overlay); app.append(dialog);
+    hits = [image, paint, frame, dialog, app];
+  `)
+  const background = `url("${f.ctx.image.currentSrc}")`
+  f.ctx.paint.style.backgroundImage = 'url("https://img.example/other.png")'
+  await f.click(f.ctx.image)
+  f.ctx.paint.style.backgroundImage = `${background}, url("https://img.example/other.png")`
+  await f.click(f.ctx.image)
+  f.ctx.paint.style.backgroundImage = background
+  f.ctx.image.complete = false
+  await f.click(f.ctx.image)
+  f.ctx.image.complete = true
+  f.ctx.hits.unshift(f.ctx.overlay)
+  await f.click(f.ctx.overlay)
+  assert.equal(f.ctx.sent.length, 0)
+  f.ctx.hits.shift()
+  f.move(f.ctx.image)
+  assert.equal(f.ctx.created[0].style.display, 'block')
+  await f.click(f.ctx.image)
+  assert.equal(f.ctx.sent[0]?.mediaKind, 'image')
+  assert.equal(f.ctx.sent[0]?.url, f.ctx.image.currentSrc)
+  assert.equal(f.ctx.__inkloomSelectedImage, f.ctx.image)
 })
 
 test('direct video hit retains video selection and Escape cancels', async () => {

@@ -543,13 +543,14 @@ function finishDelivery(t) {
     t.audio ? { mime: t.audio.mime } : {}
   )
 }
-async function boundedBlob(response, mediaKind) {
+async function boundedBlob(response, mediaKind, convertAvif = false) {
   const declared = Number(response.headers.get('content-length'))
   if (declared > MAX_TRANSFER_SIZE) throw new Error('媒体文件过大，无法导入')
   if (!response.body) throw new Error('无法读取媒体数据')
   const reader = response.body.getReader()
   const chunks = []
   let total = 0
+  let maxSize = MAX_TRANSFER_SIZE
   const header = new Uint8Array(32)
   let headerSize = 0
   try {
@@ -557,7 +558,7 @@ async function boundedBlob(response, mediaKind) {
       const { value, done } = await reader.read()
       if (done) break
       total += value.byteLength
-      if (total > MAX_TRANSFER_SIZE) {
+      if (total > maxSize) {
         await reader.cancel()
         throw new Error('媒体文件过大，无法导入')
       }
@@ -566,12 +567,23 @@ async function boundedBlob(response, mediaKind) {
         header.set(part, headerSize)
         headerSize += part.length
         if (headerSize === header.length) {
-          const format = globalThis.__inkloomImagePreflight.formatOf(header)
-          if (!['jpeg', 'png', 'webp'].includes(format)) {
+          const image = globalThis.__inkloomImagePreflight
+          const format = image.formatOf(header)
+          if (
+            format === 'avif' &&
+            convertAvif &&
+            response.status !== 206 &&
+            !response.headers.has('content-range') &&
+            image.avifConversionAvailable()
+          ) {
+            maxSize = image.MAX_AVIF_BYTES
+            if (declared > maxSize || total > maxSize) {
+              await reader.cancel().catch(() => {})
+              throw new Error('媒体文件过大，无法导入')
+            }
+          } else if (!['jpeg', 'png', 'webp'].includes(format)) {
             await reader.cancel().catch(() => {})
-            await globalThis.__inkloomImagePreflight.validate(
-              new Blob([header])
-            )
+            await image.validate(new Blob([header]))
           }
         }
       }
@@ -1119,6 +1131,8 @@ async function runImport(contextSelection, existingTransfer) {
         throw error
       }
       let blob
+      const convertAvif =
+        selection.mediaKind === 'image' && url.protocol !== 'data:'
       try {
         let response
         try {
@@ -1142,7 +1156,7 @@ async function runImport(contextSelection, existingTransfer) {
             (response.status === 206 || response.headers.get('content-range'))
           )
             throw new Error('获取到的音频不完整')
-          blob = await boundedBlob(response, selection.mediaKind)
+          blob = await boundedBlob(response, selection.mediaKind, convertAvif)
           const length = response.headers.get('content-length')
           if (
             audio &&
@@ -1161,7 +1175,9 @@ async function runImport(contextSelection, existingTransfer) {
         blob = await alternateVideo(selection)
       }
       if (selection.mediaKind === 'image')
-        await globalThis.__inkloomImagePreflight.validate(blob)
+        blob = await globalThis.__inkloomImagePreflight.validate(blob, {
+          convertAvif,
+        })
       await deliverBlob(t, blob)
     }
     if (!contextSelection || (selection.mse && !t.autoCapture))
