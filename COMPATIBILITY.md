@@ -1,20 +1,19 @@
 # Forge Anywhere 网页媒体兼容性
 
-记录桌面 Chrome 的网页素材发送结果，测试版本为 v1.0.36–v1.0.38。结论以测试样本为准。✅ 支持：已成功发送；❌ 不支持：实站样本发送未通过；🟡 待测：页面受阻、只验证了选取或仅通过模拟测试；— 无需测试：本轮未安排。
+记录桌面 Chrome 的网页素材发送结果，测试版本为 v1.0.36–v1.0.38。结论以测试样本为准。✅ 支持：已成功发送；❌ 不支持：实站样本发送未通过；🟡 待测：页面受阻、只验证了选取或仅通过模拟测试；— 无需测试：本轮未安排。在 GitHub 查看时，可按 ⌘（Mac）或 Ctrl（Windows）点击样本链接，在新标签页打开。
 
 | 平台 | 图片 | 视频 | 备注 |
 | --- | --- | --- | --- |
 | Pexels | ✅ | ✅ | 常用素材库。主图右键发送通过，视频右键和面板均可发送全片，右键样本刷新画布后可播放。[图片样本](https://www.pexels.com/photo/path-in-green-forest-13264824/) · [视频样本](https://www.pexels.com/video/serene-ocean-waves-crashing-on-shoreline-33684742/) |
-| Pinterest | ✅ | 🟡 | 视觉灵感。换网后图片页右键发送成功；视频样本待复测。[图片样本](https://www.pinterest.com/pin/969188782717555355/) · [视频样本](https://www.pinterest.com/pin/1067205871302510217/) |
+| Pinterest | ✅ | ✅ | 视觉灵感。图片和播放中的视频右键发送通过；视频结束后需重新播放再发送。[图片样本](https://www.pinterest.com/pin/969188782717555355/) · [视频样本](https://www.pinterest.com/pin/879257527234318352/) |
 | 小红书 | ✅ | ✅ | 中文图文和视频参考。发现页图片通过；RED 页可播放视频右键发送 36 秒片段，画布可解码。[发现页](https://www.xiaohongshu.com/explore) · [RED 视频](https://www.xiaohongshu.com/red_video) |
 | 微博 | ✅ | ✅ | 热点配图和视频。本轮文章配图和 102 秒视频全片均通过。[图片样本](https://weibo.com/ttarticle/p/show?id=2309404725458397954695) · [视频样本](https://weibo.com/tv/show/1034:5207772470902792) |
 | 微信 | ✅ | ✅ | 公众号文章。静态图和内嵌全片已验证，GIF 不支持，部分视频偶发 403；本轮文章复测被浏览器安全策略阻止。[图片样本](https://mp.weixin.qq.com/s/Xy3sYlWVkQ-dd0xR2z478w) · [视频样本](https://mp.weixin.qq.com/s/k9wZSu8v-wt4XxP_g-7OpQ) |
-| X | 🟡 | 🟡 | 海外图文和视频参考。v1.0.36 实站无右键图标；v1.0.37 对照测试通过，实站页加载失败且浏览器访问受限。[图片样本](https://x.com/NASA/status/2029580499312627881) · [视频样本](https://x.com/astro_reid/status/2046009031613907029) |
+| X | ✅ | ✅ | 海外图文和视频参考。用户实站测试图片、视频均可发送。[图片样本](https://x.com/NASA/status/2029580499312627881) · [视频样本](https://x.com/astro_reid/status/2046009031613907029) |
 | Unsplash | ✅ | — | 摄影图库。详情页主图右键发送通过。[图片样本](https://unsplash.com/photos/a-lake-in-front-of-a-mountain-AxSaRriVy0E) |
 | Pixabay | ✅ | ✅ | 图库和视频库。主图及 31 秒视频均由右键发送，画布可解码。[图片样本](https://pixabay.com/photos/mountains-lake-nature-landscape-7138605/) · [视频样本](https://pixabay.com/videos/waves-water-sea-ocean-landscape-22183/) |
 | Google 图片 | ✅ | — | 常用找图入口。搜索结果图可发送，有时遇到验证。[搜索样本](https://www.google.com/search?tbm=isch&q=NASA%20Pillars%20of%20Creation) |
 | 百度图片 | ✅ | — | 常用找图入口。缩略图和原图可发送；详情页 Chrome 右键菜单及面板选取成功，悬浮图标点击无响应。[搜索样本](https://image.baidu.com/search/index?tn=baiduimage&word=NASA%20Pillars%20of%20Creation) |
-| Behance | 🟡 | 🟡 | 设计作品集。换网后视频页仍报网络错误，图片页此前也未打开。[图片样本](https://www.behance.net/gallery/65590023/Adobe-MAX-2018-identity-1-event-graphics) · [视频样本](https://www.behance.net/gallery/243613957/Motion-Graphics-Showreel-2024) |
 | 抖音 | ✅ | ✅ | 国内图文和短视频。正文图可发送。连续播放可发送片段，本轮回归送出 28 秒。[图片样本](https://www.douyin.com/note/7616399587141737704) · [连续播放样本](https://www.douyin.com/video/7705256140821221561) · [跳播样本](https://www.douyin.com/video/7447854137779277115) |
 | 哔哩哔哩 | ✅ | ✅ | 中文教程和创作参考。v1.0.37 实站封面发送通过，静态 AVIF 可转 PNG，视频可发送已缓冲片段。[封面样本](https://www.bilibili.com/v/popular/all) · [视频样本](https://www.bilibili.com/video/BV1fY4y1M7Tj/) · [全景样本](https://www.bilibili.com/video/BV1Xq4y177bV/) |
 | YouTube | 🟡 | ❌ | 长视频和 Shorts。换网后视频可播放、可选取，但发送提示“不支持的媒体格式”；列表和 Shorts 待复测。[列表样本](https://www.youtube.com/@BlenderOfficial/videos) · [视频样本](https://www.youtube.com/watch?v=YE7VzlLtp-4) · [Shorts 样本](https://www.youtube.com/shorts/-zWwcOVZd4M) |
