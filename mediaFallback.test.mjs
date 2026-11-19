@@ -114,6 +114,82 @@ test('custom controls select a single hidden native audio inside a compact conta
   assert.equal(find(control), null)
 })
 
+test('a detached hidden track pairs with a single visible playback control, but not an ambiguous playlist', () => {
+  const rect = (width, height) => ({ width, height })
+  const body = { children: [] }
+  const active = {
+    tagName: 'AUDIO',
+    isConnected: true,
+    parentElement: body,
+    paused: false,
+    readyState: 4,
+    currentSrc: 'https://cdn.example/song.mp3',
+    getBoundingClientRect: () => rect(0, 0),
+  }
+  const empty = { ...active, readyState: 0, currentSrc: '' }
+  const player = {
+    parentElement: body,
+    children: [empty],
+    getAttribute: () => 'inline_player',
+    querySelector: () => null,
+    getBoundingClientRect: () => rect(600, 70),
+  }
+  empty.parentElement = player
+  const playCell = {
+    parentElement: player,
+    children: [],
+    getBoundingClientRect: () => rect(48, 48),
+  }
+  const control = {
+    parentElement: playCell,
+    children: [],
+    getAttribute: () => 'Play/pause',
+    getBoundingClientRect: () => rect(32, 32),
+  }
+  const origin = {
+    parentElement: control,
+    children: [],
+    closest: () => control,
+  }
+  let controls = [control]
+  const tracks = [active, empty]
+  const context = vm.createContext({
+    location: { hostname: 'music.example' },
+    document: {
+      body,
+      documentElement: {},
+      querySelectorAll: (selector) =>
+        selector === 'audio' ? tracks : controls,
+    },
+    innerWidth: 1200,
+    innerHeight: 900,
+  })
+  vm.runInContext(sourceCode, context)
+  const find = context.__inkloomMediaFallback.audioPlayer
+  assert.equal(find(origin)?.element, active)
+  assert.equal(find(origin)?.anchor, player)
+  tracks.push({
+    ...active,
+    currentSrc: 'https://cdn.example/other.mp3',
+  })
+  assert.equal(find(origin), null)
+  tracks.pop()
+  empty.readyState = 1
+  assert.equal(find(origin), null)
+  empty.readyState = 0
+  controls = [control, { ...control }]
+  assert.equal(find(origin), null)
+  controls = [control]
+  active.paused = true
+  assert.equal(find(origin), null)
+  active.paused = false
+  player.querySelector = () => ({ tagName: 'VIDEO' })
+  assert.equal(find(origin), null)
+  player.querySelector = () => null
+  control.getAttribute = () => 'Save'
+  assert.equal(find(origin), null)
+})
+
 test('Apple Music associates its detached preview source only with the player bar', () => {
   const audio = {
     tagName: 'AUDIO',

@@ -23,14 +23,19 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
       attachShadow(){return this.shadow=new Element('shadow')}
       remove(){this.isConnected=false}
       setAttribute(k,v){this.attrs[k]=v}
+      getAttribute(k){return this.attrs[k] ?? null}
       addEventListener(type, fn){this.listeners[type]=fn}
       matches(selector){
         if (selector==='img, video, audio') return ['img','video','audio'].includes(this.tag)
+        if (['img','video','audio'].includes(selector)) return this.tag===selector
+        if (selector==='button[aria-label], [role="button"][aria-label]')
+          return (this.tag==='button'||this.attrs.role==='button')&&!!this.attrs['aria-label']
         if (selector==='dialog, [role="dialog"], [aria-modal="true"]') return this.tag==='dialog'
         return false
       }
       closest(selector){for(let node=this;node;node=node.parentElement)if(node.matches(selector))return node;return null}
       contains(item){return this===item||this.children.some(child=>child.contains(item))}
+      querySelector(selector){return this.querySelectorAll(selector)[0] ?? null}
       querySelectorAll(selector){return this.children.flatMap(child=>[...(child.matches(selector)?[child]:[]),...child.querySelectorAll(selector)])}
       getBoundingClientRect(){return this.rect}
     }
@@ -44,6 +49,7 @@ async function fixture({ enabled = true, hasTarget = true } = {}) {
     globalThis.settings={enabled:${enabled},hasTarget:${hasTarget},canShow:true};
     globalThis.document={documentElement:html,body,
       createElement(tag){let element=new Element(tag);created.push(element);return element},
+      querySelectorAll(selector){return html.querySelectorAll(selector)},
       addEventListener(type,fn){listeners[type]=fn}, removeEventListener(type,fn){if(listeners[type]===fn)delete listeners[type]}
     };
     globalThis.window=globalThis;
@@ -84,6 +90,40 @@ test('anchors audio to the QQ Music bar and refuses a changed track', async () =
     false
   )
   f.ctx.__forgeHoverVideoCleanup()
+})
+
+test('reveals the entry for a playing body audio controlled by a compact player', async () => {
+  const f = await fixture()
+  f.run(`
+    const bounds=(left,top,width,height)=>({left,top,width,height,right:left+width,bottom:top+height});
+    globalThis.player=new Element('div',bounds(100,100,376,52));
+    player.setAttribute('class','inline_player');
+    const cell=new Element('div',bounds(100,100,56,52));
+    globalThis.control=new Element('a',bounds(100,100,56,52));
+    control.setAttribute('role','button');control.setAttribute('aria-label','Play/pause');
+    cell.append(control);player.append(cell);
+    globalThis.track=new Element('audio',bounds(0,0,0,0));
+    track.readyState=4;track.paused=false;track.currentSrc='https://cdn.example/song.mp3';track.src=track.currentSrc;
+    const empty=new Element('audio',bounds(0,0,0,0));empty.readyState=0;empty.currentSrc='';empty.src='';
+    document.body.append(player,track,empty);
+  `)
+  try {
+    assert.equal(
+      f.ctx.__inkloomMediaFallback.audioPlayer(f.ctx.control)?.element,
+      f.ctx.track
+    )
+    await f.ctx.listeners.contextmenu(f.ctx.eventFor(f.ctx.control, 120, 120))
+    assert.equal(f.ctx.created[0].style.display, 'block')
+    assert.equal(f.ctx.created[2].attrs['aria-label'], '发送音频到画布')
+    await f.ctx.created[2].listeners.click(f.ctx.clickFor(true))
+    const sent = f.ctx.sent.find(
+      (message) => message.kind === 'HOVER_MEDIA_SEND'
+    )
+    assert.equal(sent?.url, 'https://cdn.example/song.mp3')
+    assert.equal(sent?.mediaKind, 'audio')
+  } finally {
+    f.ctx.__forgeHoverVideoCleanup()
+  }
 })
 
 test('anchors the right-click button to the sibling painting a loaded image and refuses changed paint', async () => {

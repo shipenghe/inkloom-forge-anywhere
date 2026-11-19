@@ -187,6 +187,59 @@
     return width === 0 || height === 0
   }
 
+  function detachedAudioPlayer(origin) {
+    // Some players keep their audio element outside the controls. Only pair
+    // them when the page has one usable hidden track and one visible playback
+    // control; a track list must never send a different song by inference.
+    const selector = 'button[aria-label], [role="button"][aria-label]'
+    const control = origin?.closest?.(selector)
+    const label = control?.getAttribute?.('aria-label')?.trim()
+    if (!/^(?:play|pause)(?:\s*\/\s*(?:play|pause))?$/i.test(label || ''))
+      return null
+    const controls = [...(document.querySelectorAll?.(selector) || [])].filter(
+      (candidate) => {
+        const text = candidate.getAttribute('aria-label')?.trim() || ''
+        if (!/^(?:play|pause)(?:\s*\/\s*(?:play|pause))?$/i.test(text))
+          return false
+        const rect = candidate.getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0
+      }
+    )
+    if (controls.length !== 1 || controls[0] !== control) return null
+    const tracks = [...document.querySelectorAll('audio')].filter(
+      (audio) => audio.readyState >= 1 && !audio.error && !audio.ended
+    )
+    if (
+      tracks.length !== 1 ||
+      tracks[0].parentElement !== document.body ||
+      tracks[0].paused !== false ||
+      !hiddenAudio(tracks[0])
+    )
+      return null
+    for (
+      let anchor = control.parentElement, depth = 0;
+      anchor &&
+      anchor !== document.body &&
+      anchor !== document.documentElement &&
+      depth < 6;
+      anchor = anchor.parentElement, depth++
+    ) {
+      const { width, height } = anchor.getBoundingClientRect()
+      if (
+        /(?:^|[\s_-])player(?:[\s_-]|$)/i.test(
+          anchor.getAttribute?.('class') || ''
+        ) &&
+        !anchor.querySelector?.('video') &&
+        width >= 80 &&
+        width <= Math.min(innerWidth, 960) &&
+        height >= 18 &&
+        height <= Math.min(innerHeight / 3, 240)
+      )
+        return { element: tracks[0], anchor, control }
+    }
+    return null
+  }
+
   function audioPlayer(origin) {
     // Custom controls may share their compact container with a hidden native
     // player. Controls can sit several wrappers below the direct audio sibling.
@@ -205,6 +258,17 @@
       const { width, height } = anchor.getBoundingClientRect()
       if (width < 80 || height < 18 || height > Math.min(innerHeight / 3, 240))
         continue
+      if (
+        tracks.every(
+          (audio) =>
+            audio.readyState === 0 &&
+            !audio.currentSrc &&
+            !audio.src &&
+            !audio.srcObject &&
+            !audio.querySelector?.('source[src]')
+        )
+      )
+        continue
       const [element] = tracks
       return tracks.length === 1 && hiddenAudio(element)
         ? { element, anchor, control: anchor }
@@ -217,7 +281,8 @@
       const element = anchor && document.getElementById('apple-music-player')
       return hiddenAudio(element) ? { element, anchor, control: anchor } : null
     }
-    return qqMusicAudio(origin)
+    if (location.hostname === 'y.qq.com') return qqMusicAudio(origin)
+    return detachedAudioPlayer(origin)
   }
 
   function sameBounds(first, second, tolerance = 1) {
