@@ -13,12 +13,12 @@
 | Unsplash | ✅ | — | 摄影图库。详情页主图右键发送通过。[图片样本](https://unsplash.com/photos/a-lake-in-front-of-a-mountain-AxSaRriVy0E) |
 | Pixabay | ✅ | ✅ | 图库和视频库。主图及 31 秒视频均由右键发送，画布可解码。[图片样本](https://pixabay.com/photos/mountains-lake-nature-landscape-7138605/) · [视频样本](https://pixabay.com/videos/waves-water-sea-ocean-landscape-22183/) |
 | Google 图片 | ✅ | — | 常用找图入口。搜索结果图可发送，有时遇到验证。[搜索样本](https://www.google.com/search?tbm=isch&q=NASA%20Pillars%20of%20Creation) |
-| 百度图片 | ✅ | — | 常用找图入口。缩略图和原图可发送；详情页 Chrome 右键菜单及面板选取成功，悬浮图标点击无响应。[搜索样本](https://image.baidu.com/search/index?tn=baiduimage&word=NASA%20Pillars%20of%20Creation) |
+| 百度图片 | ✅ | — | 常用找图入口。此前缩略图和原图发送通过；本轮搜索图右键可见 Forge 图标，但悬浮图标点击结果未确认。[搜索样本](https://image.baidu.com/search/index?tn=baiduimage&word=NASA%20Pillars%20of%20Creation) |
 | 抖音 | ✅ | ✅ | 国内图文和短视频。正文图可发送。连续播放可发送片段，本轮回归送出 28 秒。[图片样本](https://www.douyin.com/note/7616399587141737704) · [连续播放样本](https://www.douyin.com/video/7705256140821221561) · [跳播样本](https://www.douyin.com/video/7447854137779277115) |
 | 哔哩哔哩 | ✅ | ✅ | 中文教程和创作参考。v1.0.37 实站封面发送通过，静态 AVIF 可转 PNG，视频可发送已缓冲片段。[封面样本](https://www.bilibili.com/v/popular/all) · [视频样本](https://www.bilibili.com/video/BV1fY4y1M7Tj/) · [全景样本](https://www.bilibili.com/video/BV1Xq4y177bV/) |
 | YouTube | 🟡 | ❌ | 长视频和 Shorts。换网后视频可播放、可选取，但发送提示“不支持的媒体格式”；列表和 Shorts 待复测。[列表样本](https://www.youtube.com/@BlenderOfficial/videos) · [视频样本](https://www.youtube.com/watch?v=YE7VzlLtp-4) · [Shorts 样本](https://www.youtube.com/shorts/-zWwcOVZd4M) |
 | Instagram | ✅ | ❌ | 海外图集和 Reels。v1.0.39 图片经面板发送完成；原 Reel 选取后报片段不足，继续播放后报片段不连续。[图片样本](https://www.instagram.com/p/DelZ5g8l8Pr/) · [原视频样本](https://www.instagram.com/reel/DehZj9wggt0/) · [海冰 Reel](https://www.instagram.com/reel/DUa5b_BDmmD/) · [Earthset Reel](https://www.instagram.com/reel/DeTUk4sDSp-/) |
-| TikTok | 🟡 | 🟡 | 海外竖屏短视频。此前图集和视频可加载；本轮公司网络导航超时，发送未测。[图片样本](https://www.tiktok.com/@nomadcentraka/photo/7571216638826122514) · [视频样本](https://www.tiktok.com/@nasa/video/7695060950394703118) |
+| TikTok | 🟡 | ❌ | 海外竖屏短视频。图集待复测；NASA 视频可播放，右键 Forge 图标出现，发送报“视频片段不连续”。[图片样本](https://www.tiktok.com/@nomadcentraka/photo/7571216638826122514) · [视频样本](https://www.tiktok.com/@nasa/video/7695060950394703118) |
 | Mixkit | — | ✅ | 免费视频素材。本轮右键发送 30 秒全片并播放通过，先前也验证过刷新画布后播放。[视频样本](https://mixkit.co/free-stock-video/waves-reaching-the-shore-1925/) |
 | Wikimedia Commons | ✅ | — | 公开素材对照。换网后图片右键发送成功。[图片样本](https://commons.wikimedia.org/wiki/File:JPEG_example_flower.jpg) |
 
